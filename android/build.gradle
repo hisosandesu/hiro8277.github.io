@@ -31,6 +31,13 @@ allprojects {
     mavenCentral()
     maven { url 'https://www.jitpack.io' }
   }
+
+  // Apply CMake flags to all subprojects to suppress deprecated API warnings
+  afterEvaluate { project ->
+    if (project.extensions.findByName('android') && project.android.defaultConfig?.externalNativeBuild?.cmake) {
+      project.android.defaultConfig.externalNativeBuild.cmake.cppFlags "-Wno-error=deprecated-declarations"
+    }
+  }
 }
 
 apply plugin: "expo-root-project"
