@@ -7,7 +7,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "postinstall": "patch-package"
+    "postinstall": "echo '=== patches dir ===' && ls -la patches/ && echo '=== applying patches ===' && patch-package --verbose && echo '=== verifying expo-dev-launcher patch ===' && head -5 node_modules/expo-dev-launcher/android/src/debug/java/expo/modules/devlauncher/launcher/DevLauncherReactHost.kt"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",
@@ -25,7 +25,7 @@
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
     "react-native-gesture-handler": "~2.24.0",
-    "react-native-reanimated": "^3.17.5",
+    "react-native-reanimated": "~4.1.1",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
     "react-native-vision-camera": "^4.7.1"
