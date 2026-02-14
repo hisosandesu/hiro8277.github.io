@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "react-native-text-ml-kit-text-recognition3",
+    "name": "OCR-APP",
     "slug": "react-native-text-ml-kit-text-recognition3",
     "plugins": [
       [
@@ -33,7 +33,6 @@
       "supportsTablet": true
     },
     "android": {
-      "permission": "CAMERA",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
