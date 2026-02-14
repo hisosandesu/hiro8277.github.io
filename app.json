@@ -37,7 +37,6 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
       "package": "com.hiro8277.reactnativetextmlkittextrecognition3"
     },
     "web": {
