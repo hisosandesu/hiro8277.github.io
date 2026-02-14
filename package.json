@@ -7,7 +7,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "postinstall": "echo '=== patches dir ===' && ls -la patches/ && echo '=== applying patches ===' && patch-package --verbose && echo '=== verifying expo-dev-launcher patch ===' && head -5 node_modules/expo-dev-launcher/android/src/debug/java/expo/modules/devlauncher/launcher/DevLauncherReactHost.kt"
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",

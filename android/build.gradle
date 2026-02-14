@@ -8,7 +8,7 @@ buildscript {
   dependencies {
     classpath('com.android.tools.build:gradle')
     classpath('com.facebook.react:react-native-gradle-plugin')
-    classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')
+    classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20')
   }
 }
 
@@ -36,6 +36,29 @@ allprojects {
   afterEvaluate { project ->
     if (project.extensions.findByName('android') && project.android.defaultConfig?.externalNativeBuild?.cmake) {
       project.android.defaultConfig.externalNativeBuild.cmake.cppFlags "-Wno-error=deprecated-declarations"
+    }
+  }
+}
+
+// Re-apply patches before Gradle build to ensure patched sources are used
+gradle.projectsEvaluated {
+  def patchTask = tasks.register("applyPatchPackage") {
+    doLast {
+      def projectRoot = rootDir.parentFile
+      def patchesDir = new File(projectRoot, "patches")
+      if (patchesDir.exists() && patchesDir.listFiles()?.length > 0) {
+        println "[patch-package] Re-applying patches before build..."
+        exec {
+          workingDir projectRoot
+          commandLine "npx", "patch-package", "--patch-dir", "patches"
+        }
+        println "[patch-package] Patches applied successfully"
+      }
+    }
+  }
+  rootProject.subprojects { sub ->
+    sub.tasks.matching { it.name == "preBuild" }.configureEach {
+      dependsOn patchTask
     }
   }
 }
