@@ -1,5 +1,5 @@
 diff --git a/node_modules/expo-dev-menu/android/src/debug/java/expo/modules/devmenu/DevMenuReactHost.kt b/node_modules/expo-dev-menu/android/src/debug/java/expo/modules/devmenu/DevMenuReactHost.kt
-index 1234567..abcdefg 100644
+index 9f17865..c881932 100644
 --- a/node_modules/expo-dev-menu/android/src/debug/java/expo/modules/devmenu/DevMenuReactHost.kt
 +++ b/node_modules/expo-dev-menu/android/src/debug/java/expo/modules/devmenu/DevMenuReactHost.kt
 @@ -3,7 +3,6 @@ package expo.modules.devmenu
@@ -18,7 +18,7 @@ index 1234567..abcdefg 100644
  import com.facebook.react.runtime.ReactHostImpl
  import com.facebook.react.runtime.hermes.HermesInstance
  import com.facebook.react.shell.MainReactPackage
-@@ -36,11 +34,7 @@ object DevMenuReactHost {
+@@ -36,12 +34,7 @@ object DevMenuReactHost {
      val jsBundleAssetPath = "EXDevMenuApp.android.js"
      val jsBundleLoader =
        JSBundleLoader.createAssetLoader(application, "assets://$jsBundleAssetPath", true)
@@ -32,7 +32,7 @@ index 1234567..abcdefg 100644
      val jsMainModuleName = "packages/expo-dev-menu/app/index"
      val defaultReactHostDelegate =
        DefaultReactHostDelegate(
-@@ -94,14 +88,6 @@ object DevMenuReactHost {
+@@ -94,14 +87,6 @@ object DevMenuReactHost {
      return packages
    }
 
@@ -48,7 +48,7 @@ index 1234567..abcdefg 100644
     * To use a different packager url, we need to replace internal RN objects.
     */
 diff --git a/node_modules/expo-dev-menu/android/src/main/java/com/facebook/react/devsupport/DevMenuSettingsBase.kt b/node_modules/expo-dev-menu/android/src/main/java/com/facebook/react/devsupport/DevMenuSettingsBase.kt
-index 1234567..abcdefg 100644
+index 4079443..ba65397 100644
 --- a/node_modules/expo-dev-menu/android/src/main/java/com/facebook/react/devsupport/DevMenuSettingsBase.kt
 +++ b/node_modules/expo-dev-menu/android/src/main/java/com/facebook/react/devsupport/DevMenuSettingsBase.kt
 @@ -55,9 +55,6 @@ abstract class DevMenuSettingsBase(
@@ -62,11 +62,10 @@ index 1234567..abcdefg 100644
    }
 
 diff --git a/node_modules/expo-dev-menu/android/src/main/java/expo/modules/devmenu/react/DevMenuHostHelper.kt b/node_modules/expo-dev-menu/android/src/main/java/expo/modules/devmenu/react/DevMenuHostHelper.kt
-index 1234567..abcdefg 100644
+index f8a960e..771c80f 100644
 --- a/node_modules/expo-dev-menu/android/src/main/java/expo/modules/devmenu/react/DevMenuHostHelper.kt
 +++ b/node_modules/expo-dev-menu/android/src/main/java/expo/modules/devmenu/react/DevMenuHostHelper.kt
-@@ -2,15 +2,10 @@ package expo.modules.devmenu.react
-
+@@ -3,15 +3,8 @@ package expo.modules.devmenu.react
  import android.app.Application
  import com.facebook.hermes.reactexecutor.HermesExecutorFactory
  import com.facebook.react.bridge.JavaScriptExecutorFactory
