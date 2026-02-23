@@ -1,0 +1,37 @@
+{
+    "mcpServers": {
+        "playwright": {
+            "command": "cmd",
+            "args": [
+                "/c",
+                "npx",
+                "-y",
+                "@playwright/mcp@latest",
+                "--browser",
+                "chromium",
+                "--isolated",
+                "--no-sandbox"
+            ]
+        },
+        "context7": {
+            "command": "cmd",
+            "args": [
+                "/c",
+                "npx",
+                "-y",
+                "@upstash/context7-mcp"
+            ]
+        },
+        "serena": {
+            "command": "cmd",
+            "args": [
+                "/c",
+                "uvx",
+                "--from",
+                "git+https://github.com/oraios/serena",
+                "serena",
+                "start-mcp-server"
+            ]
+        }
+    }
+}

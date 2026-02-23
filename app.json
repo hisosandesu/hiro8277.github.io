@@ -6,9 +6,9 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera",
-          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
-          "recordAudioAndroid": true
+          "cameraPermission": "カメラにアクセスするための許可が必要です",
+          "microphonePermission": "マイクにアクセスするための許可が必要です",
+          "recordAudioAndroid": false
         }
       ],
       [
@@ -17,9 +17,17 @@
           "photosPermission": "写真ライブラリにアクセスするための許可が必要です",
           "cameraPermission": "カメラにアクセスするための許可が必要です"
         }
-      ]
+      ],
+      "@sentry/react-native",
+      "expo-secure-store"
     ],
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/28fb87b6-2976-486c-9461-d475f35335dc"
+    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -30,7 +38,8 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hiro8277.reactnativetextmlkittextrecognition3"
     },
     "android": {
       "adaptiveIcon": {

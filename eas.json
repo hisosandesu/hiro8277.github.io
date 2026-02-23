@@ -6,7 +6,10 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
     },
     "preview": {
       "distribution": "internal",
@@ -16,7 +19,13 @@
       "node": "20.14.0"
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "node": "20.14.0",
+      "distribution": "store",
+      "channel": "production",
+      "android": {
+        "buildType": "app-bundle"
+      }
     },
     "development-simulator": {
       "developmentClient": true,

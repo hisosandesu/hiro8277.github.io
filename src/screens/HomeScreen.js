@@ -1,19 +1,17 @@
-import React, { useEffect, useLayoutEffect, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import {
-  Button,
   SafeAreaView,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
   Alert,
-  PermissionsAndroid,
   TouchableOpacity,
 } from "react-native";
+import { StatusBar } from "expo-status-bar";
 
-import { launchImageLibrary, launchCamera } from "react-native-image-picker";
+import * as Crypto from "expo-crypto";
+import * as ImagePicker from "expo-image-picker";
 import TextRecognition, {
   TextRecognitionScript,
 } from "@react-native-ml-kit/text-recognition";
@@ -22,98 +20,96 @@ import Icon from "@react-native-vector-icons/fontawesome6";
 import FloatingButton from "../components/FloatingButton";
 import ClearButton from "../components/ClearButton";
 import SaveButton from "../components/SaveButton";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
-const HISTORY_KEY = "@ocr_history";
+import { preprocessImageForOCR } from "../utils/imagePreprocessing";
+import { filterOCRResult } from "../utils/textFilter";
+import { SecureStorage } from "../utils/secureStorage";
+import { captureError } from "../utils/monitoring";
+import { HISTORY_KEY } from "../constants/storage";
+import { COLORS } from "../constants/colors";
+import { MESSAGES } from "../constants/messages";
+import { HISTORY_LIMIT, MAX_TEXT_LENGTH } from "../constants/app";
 
 export default function HomeScreen({ navigation }) {
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerRight: () => {
-        return (
-          <View style={{ flexDirection: "row" }}>
-            <TouchableOpacity
-              style={{ marginRight: 15 }}
-              onPress={() => navigation.navigate("History")}
-            >
-              <Icon name="circle-right" color={"white"} size={25} solid />
-            </TouchableOpacity>
-            <TouchableOpacity style={{ marginRight: 15 }} onPress={pickImage}>
-              <Icon name="folder" color={"white"} size={25} solid />
-            </TouchableOpacity>
-          </View>
-        );
-      },
-    });
-  }, []);
-
-  const isDarkMode = useColorScheme() === "dark";
   const [image, setImage] = useState("");
   const [text, setText] = useState("");
 
-  const pickImage = async () => {
-    let result = await launchImageLibrary({ mediaType: "photo" });
-    if (result && result.assets && result.assets.length > 0) {
-      console.log("📸 撮影/選択した画像:", result.assets[0].uri);
+  const pickImage = useCallback(async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: false,
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
       setImage(result.assets[0].uri);
     }
-  };
+  }, []);
 
-  const requestCameraPermission = async () => {
-    try {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.CAMERA,
-        {
-          title: "カメラアクセス許可",
-          message: "OCR機能のためにカメラを使用します。",
-          buttonNeutral: "あとで",
-          buttonNegative: "拒否",
-          buttonPositive: "許可",
-        }
-      );
-      return granted === PermissionsAndroid.RESULTS.GRANTED;
-    } catch (err) {
-      console.warn(err);
-      return false;
-    }
-  };
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity style={{ marginLeft: 15 }} onPress={pickImage}>
+          <Icon name="folder" color={COLORS.white} size={25} solid />
+        </TouchableOpacity>
+      ),
+      headerRight: () => (
+        <TouchableOpacity
+          style={{ marginRight: 15 }}
+          onPress={() => navigation.navigate("History")}
+        >
+          <Icon name="circle-right" color={COLORS.white} size={25} solid />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, pickImage]);
 
   const openCamera = async () => {
-    const hasPermission = await requestCameraPermission();
-    if (!hasPermission) {
-      Alert.alert("エラー", "カメラ権限がありません。");
+    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+
+    if (!permissionResult.granted) {
+      Alert.alert(MESSAGES.ERROR.TITLE, MESSAGES.ERROR.CAMERA_PERMISSION);
       return;
     }
 
     try {
-      const result = await launchCamera({ mediaType: "photo" });
-      if (result.didCancel) return;
-      if (result.errorCode) {
-        console.log("ImagePicker Error: ", result.errorMessage);
-        return;
-      }
-      if (result.assets && result.assets.length > 0) {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ["images"],
+        allowsEditing: false,
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
         setImage(result.assets[0].uri);
       }
     } catch (error) {
-      console.error("launchCamera failed:", error);
+      captureError(error, { screen: "HomeScreen", action: "openCamera" });
+      Alert.alert(MESSAGES.ERROR.TITLE, MESSAGES.ERROR.CAMERA_LAUNCH);
     }
   };
 
   const recognizeText = async () => {
     if (image) {
       try {
+        const processedUri = await preprocessImageForOCR(image);
         const result = await TextRecognition.recognize(
-          image,
-          TextRecognitionScript.JAPANESE // 👈 日本語スクリプトを指定
+          processedUri,
+          TextRecognitionScript.JAPANESE
         );
         if (result) {
-          setText(result.text);
-          console.log("📄 認識したテキスト:", result.text);
+          const filtered = filterOCRResult(result.text);
+          if (filtered.length > MAX_TEXT_LENGTH) {
+            setText(filtered.slice(0, MAX_TEXT_LENGTH));
+            Alert.alert(
+              MESSAGES.INFO.TEXT_TRUNCATED_TITLE,
+              MESSAGES.INFO.TEXT_TRUNCATED_BODY
+            );
+          } else {
+            setText(filtered);
+          }
         }
-      } catch (err) {
-        console.error("TextRecognition error:", err);
-        Alert.alert("エラー", "テキスト認識に失敗しました");
+      } catch (error) {
+        captureError(error, { screen: "HomeScreen", action: "recognizeText" });
+        Alert.alert(MESSAGES.ERROR.TITLE, MESSAGES.ERROR.OCR_FAILED);
       }
     }
   };
@@ -121,67 +117,66 @@ export default function HomeScreen({ navigation }) {
   const clearResult = () => {
     setImage("");
     setText("");
-    console.log("🧹 結果をクリアしました");
   };
 
   const saveToHistory = async () => {
     if (!text) {
-      Alert.alert("エラー", "保存するテキストがありません");
+      Alert.alert(MESSAGES.ERROR.TITLE, MESSAGES.ERROR.NO_TEXT);
       return;
     }
 
     try {
-      // 既存の履歴を取得
-      const jsonValue = await AsyncStorage.getItem(HISTORY_KEY);
-      const history = jsonValue != null ? JSON.parse(jsonValue) : [];
+      const jsonValue = await SecureStorage.getItem(HISTORY_KEY);
+      let history = [];
+      try {
+        history = jsonValue != null ? JSON.parse(jsonValue) : [];
+        if (!Array.isArray(history)) {
+          history = [];
+        }
+      } catch (parseError) {
+        history = [];
+      }
 
-      // 新しい履歴項目を作成
       const newItem = {
-        id: Date.now().toString(),
+        id: Crypto.randomUUID(),
         text: text,
         date: Date.now(),
       };
 
-      // 履歴の先頭に追加
       const newHistory = [newItem, ...history];
 
-      // 履歴を保存（最大100件まで）
-      await AsyncStorage.setItem(
+      await SecureStorage.setItem(
         HISTORY_KEY,
-        JSON.stringify(newHistory.slice(0, 100))
+        JSON.stringify(newHistory.slice(0, HISTORY_LIMIT))
       );
 
-      console.log("💾 履歴に保存しました:", newItem.id);
-      Alert.alert("保存完了", "テキストを履歴に保存しました");
-    } catch (e) {
-      console.error("履歴の保存エラー:", e);
-      Alert.alert("エラー", "履歴の保存に失敗しました");
+      Alert.alert(MESSAGES.SUCCESS.SAVE_TITLE, MESSAGES.SUCCESS.SAVE_BODY);
+    } catch (error) {
+      captureError(error, { screen: "HomeScreen", action: "saveToHistory" });
+      Alert.alert(MESSAGES.ERROR.TITLE, MESSAGES.ERROR.SAVE_FAILED);
     }
   };
 
   useEffect(() => {
-    recognizeText();
+    if (image) {
+      recognizeText();
+    }
   }, [image]);
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.inner}>
-          <Text>OCR テスト</Text>
-          <View style={{ flexDirection: "row", marginVertical: 16 }}>
-            <Button onPress={pickImage} title="画像を選択" />
-            <Button onPress={openCamera} title="カメラ起動" />
-          </View>
-          <View>
-            <Text style={{ textAlign: "justify", fontSize: 10, padding: 16 }}>
-              {text}
-            </Text>
-          </View>
+          {text ? (
+            <View style={styles.textContainer}>
+              <Text style={styles.textContent}>{text}</Text>
+            </View>
+          ) : null}
         </View>
-        <FloatingButton onPress={openCamera}></FloatingButton>
-        {text ? <SaveButton onPress={saveToHistory}></SaveButton> : null}
-        {text ? <ClearButton onPress={clearResult}></ClearButton> : null}
       </ScrollView>
+      <FloatingButton onPress={openCamera} />
+      {text ? <SaveButton onPress={saveToHistory} /> : null}
+      {text ? <ClearButton onPress={clearResult} /> : null}
       <StatusBar style="light" />
     </SafeAreaView>
   );
@@ -190,15 +185,34 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f2f2f7", // 全体の背景色
+    backgroundColor: COLORS.background,
   },
   scroll: {
-    flexGrow: 1, // ScrollView 全体に色を適用するため
-    backgroundColor: "#f2f2f7",
+    flexGrow: 1,
+    backgroundColor: COLORS.background,
   },
   inner: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    padding: 16,
+  },
+  textContainer: {
+    backgroundColor: COLORS.white,
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+    width: "100%",
+  },
+  textContent: {
+    fontSize: 14,
+    color: COLORS.textPrimary,
+    lineHeight: 20,
+    textAlign: "justify",
   },
 });

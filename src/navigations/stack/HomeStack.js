@@ -1,6 +1,7 @@
 import { createStackNavigator } from "@react-navigation/stack";
 import HomeScreen from "../../screens/HomeScreen";
 import HistoryScreen from "../../screens/HistoryScreen";
+import { COLORS } from "../../constants/colors";
 
 const Stack = createStackNavigator();
 
@@ -8,8 +9,8 @@ export default function HomeStack() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerTintColor: "white",
-        headerStyle: { backgroundColor: "#167476" },
+        headerTintColor: COLORS.white,
+        headerStyle: { backgroundColor: COLORS.primary },
         headerTitleAlign: "center",
       }}
     >

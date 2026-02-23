@@ -1,24 +1,10 @@
-import { StyleSheet, TouchableOpacity } from "react-native";
-import Icon from "@react-native-vector-icons/fontawesome6";
-
-const styles = StyleSheet.create({
-  button: {
-    position: "absolute",
-    right: 30,
-    bottom: 30,
-    width: 60,
-    height: 60,
-    backgroundColor: "#167476",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 30,
-  },
-});
+import { StyleSheet } from "react-native";
+import ActionButton from "./ActionButton";
 
 export default function FloatingButton({ onPress }) {
-  return (
-    <TouchableOpacity style={styles.button} onPress={onPress}>
-      <Icon name="square-plus" size={25} color={"white"} solid />
-    </TouchableOpacity>
-  );
+  return <ActionButton onPress={onPress} iconName="square-plus" style={styles.position} />;
 }
+
+const styles = StyleSheet.create({
+  position: { right: 30, bottom: 30 },
+});
