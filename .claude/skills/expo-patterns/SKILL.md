@@ -82,6 +82,36 @@ async function takePhoto() {
 }
 ```
 
+### expo-file-system（ファイルシステム）
+
+> ⚠️ **SDK 54 / v17 破壊的変更**: `readAsStringAsync` 等の旧APIが廃止。
+
+```javascript
+// ✅ SDK 54 で旧APIを使い続ける場合（legacy サブパス）
+import * as FileSystem from "expo-file-system/legacy";
+
+async function readFileAsBase64(uri) {
+  return await FileSystem.readAsStringAsync(uri, {
+    encoding: "base64", // ✅ 文字列リテラル。FileSystem.EncodingType.Base64 は undefined になるため使用不可
+  });
+}
+
+// ✅ SDK 54 新API（推奨・将来の標準）
+import { File } from "expo-file-system/next";
+
+async function readFileAsBase64New(uri) {
+  const file = new File(uri);
+  return await file.readAsBase64();
+}
+```
+
+| 方法 | インポートパス | 特徴 |
+|------|-------------|------|
+| Legacy API | `"expo-file-system/legacy"` | 既存コードの変更最小。廃止予定 |
+| 新API (File) | `"expo-file-system/next"` | SDK 54 推奨。クラスベース |
+
+---
+
 ### expo-secure-store（セキュアストレージ）
 
 ```javascript

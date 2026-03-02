@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import {
   SafeAreaView,
   FlatList,
@@ -20,7 +20,7 @@ import Animated, {
   runOnJS,
 } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import { SecureStorage } from "../utils/secureStorage";
+import { AppStorage } from "../utils/secureStorage";
 import { captureError } from "../utils/monitoring";
 import { HISTORY_KEY } from "../constants/storage";
 import { COLORS } from "../constants/colors";
@@ -28,6 +28,8 @@ import { MESSAGES } from "../constants/messages";
 import { CLIPBOARD_CLEAR_DELAY } from "../constants/app";
 
 const SWIPE_THRESHOLD = -100;
+// historyItem: padding32 + header28 + text3行60 + swipeContainer marginBottom12
+const ITEM_HEIGHT = 132;
 
 function formatDate(timestamp) {
   const date = new Date(timestamp);
@@ -110,9 +112,26 @@ export default function HistoryScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
 
+  // setState 外でも最新の history を参照するための ref（deleteItem の stale closure 回避）
+  const historyRef = useRef(history);
+  const clipboardTimerRef = useRef(null);
+
+  useEffect(() => {
+    historyRef.current = history;
+  }, [history]);
+
+  // クリップボードタイマーのクリーンアップ（アンマウント時）
+  useEffect(() => {
+    return () => {
+      if (clipboardTimerRef.current) {
+        clearTimeout(clipboardTimerRef.current);
+      }
+    };
+  }, []);
+
   const loadHistory = useCallback(async () => {
     try {
-      const jsonValue = await SecureStorage.getItem(HISTORY_KEY);
+      const jsonValue = await AppStorage.getItem(HISTORY_KEY);
       if (jsonValue != null) {
         try {
           const data = JSON.parse(jsonValue);
@@ -123,7 +142,7 @@ export default function HistoryScreen() {
           }
         } catch (parseError) {
           setHistory([]);
-          await SecureStorage.removeItem(HISTORY_KEY);
+          await AppStorage.removeItem(HISTORY_KEY);
         }
       }
     } catch (error) {
@@ -133,19 +152,19 @@ export default function HistoryScreen() {
   }, []);
 
   const deleteItem = useCallback((id) => {
-    setHistory((prev) => {
-      const newHistory = prev.filter((item) => item.id !== id);
-      SecureStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory)).catch(
-        (error) => {
-          captureError(error, { screen: "HistoryScreen", action: "deleteItem" });
-          Alert.alert(MESSAGES.ERROR.TITLE, MESSAGES.ERROR.DELETE_FAILED);
-        }
-      );
-      return newHistory;
-    });
+    // historyRef を使って stale closure を回避しつつ、
+    // ストレージ書き込みを setState updater の外で実行する（副作用分離）
+    const newHistory = historyRef.current.filter((item) => item.id !== id);
+    setHistory(newHistory);
+    AppStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory)).catch(
+      (error) => {
+        captureError(error, { screen: "HistoryScreen", action: "deleteItem" });
+        Alert.alert(MESSAGES.ERROR.TITLE, MESSAGES.ERROR.DELETE_FAILED);
+      }
+    );
   }, []);
 
-  const clearAllHistory = () => {
+  const clearAllHistory = useCallback(() => {
     Alert.alert(
       MESSAGES.CONFIRM.DELETE_ALL_TITLE,
       MESSAGES.CONFIRM.DELETE_ALL_BODY,
@@ -156,7 +175,7 @@ export default function HistoryScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              await SecureStorage.removeItem(HISTORY_KEY);
+              await AppStorage.removeItem(HISTORY_KEY);
               setHistory([]);
             } catch (error) {
               captureError(error, {
@@ -169,27 +188,31 @@ export default function HistoryScreen() {
         },
       ]
     );
-  };
+  }, []);
 
   const openItem = useCallback((item) => {
     setSelectedItem(item);
     setModalVisible(true);
   }, []);
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     setModalVisible(false);
     setSelectedItem(null);
-  };
+  }, []);
 
-  const copyToClipboard = async () => {
+  const copyToClipboard = useCallback(async () => {
     if (selectedItem) {
       await Clipboard.setStringAsync(selectedItem.text);
       Alert.alert(MESSAGES.SUCCESS.COPY_TITLE, MESSAGES.SUCCESS.COPY_BODY);
-      setTimeout(async () => {
+      // 既存タイマーをクリアしてから再設定（連続コピー時の競合を防止）
+      if (clipboardTimerRef.current) {
+        clearTimeout(clipboardTimerRef.current);
+      }
+      clipboardTimerRef.current = setTimeout(async () => {
         await Clipboard.setStringAsync("");
       }, CLIPBOARD_CLEAR_DELAY);
     }
-  };
+  }, [selectedItem]);
 
   useFocusEffect(
     useCallback(() => {
@@ -226,6 +249,15 @@ export default function HistoryScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.scroll}
         renderItem={renderItem}
+        getItemLayout={(_data, index) => ({
+          length: ITEM_HEIGHT,
+          offset: ITEM_HEIGHT * index,
+          index,
+        })}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={10}
+        removeClippedSubviews={true}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Icon name="file" size={60} color={COLORS.textSecondary} solid />

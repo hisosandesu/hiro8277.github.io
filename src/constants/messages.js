@@ -4,6 +4,7 @@ export const MESSAGES = {
     CAMERA_PERMISSION: "カメラ権限がありません。",
     CAMERA_LAUNCH: "カメラの起動に失敗しました",
     OCR_FAILED: "テキスト認識に失敗しました",
+    HIGH_PRECISION_FAILED: "Cloud Vision APIでの高精度認識に失敗しました",
     NO_TEXT: "保存するテキストがありません",
     SAVE_FAILED: "履歴の保存に失敗しました",
     LOAD_FAILED: "履歴の読み込みに失敗しました",

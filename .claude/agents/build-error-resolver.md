@@ -149,6 +149,29 @@ const age: number = parseInt("30", 10)
 
 ## EAS Build 固有のエラーパターン
 
+### パターン: expo-file-system v17 旧API廃止 (SDK 54+)
+
+**症状1**: `Method readAsStringAsync imported from "expo-file-system" is deprecated`
+**症状2**: `Cannot read property 'Base64' of undefined`
+**原因**: expo-file-system v17 で `readAsStringAsync` 等の関数API と `EncodingType` 定数が廃止
+**解決策**:
+
+```javascript
+// ❌ NG
+import * as FileSystem from "expo-file-system";
+FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+
+// ✅ 修正1: legacy パスに変更（1行の変更で即解決）
+import * as FileSystem from "expo-file-system/legacy";
+FileSystem.readAsStringAsync(uri, { encoding: "base64" }); // EncodingType の代わりに文字列リテラル
+
+// ✅ 修正2: 新API（File クラス）
+import { File } from "expo-file-system/next";
+const base64 = await new File(uri).readAsBase64();
+```
+
+---
+
 ### パターン: patch-package がEAS Buildで機能しない
 
 **症状**: ローカルでは動くがEAS Buildでパッチが適用されない

@@ -24,7 +24,7 @@ docs.expo.dev の公式ドキュメントに準拠します。
   - `expo-image-picker`: 画像/動画選択
   - `expo-clipboard`: クリップボード操作
   - `expo-secure-store`: セキュアストレージ
-  - `expo-file-system`: ファイルシステムアクセス
+  - `expo-file-system`: ファイルシステムアクセス（v17でAPI刷新 → 下記「SDK破壊的変更」参照）
   - `expo-notifications`: プッシュ通知
   - `expo-location`: 位置情報
   - `expo-sensors`: デバイスセンサー
@@ -120,6 +120,33 @@ docs.expo.dev の公式ドキュメントに準拠します。
 - expo-localization で端末言語を取得
 - i18n-js / react-i18next で翻訳管理
 - Config Pluginで対応言語を宣言 (supportedLocales)
+
+## SDK バージョン別 破壊的変更
+
+### expo-file-system v17 (SDK 54+) ⚠️
+
+旧API (`readAsStringAsync`, `writeAsStringAsync` 等) が**廃止**。
+
+```javascript
+// ❌ NG: SDK 54 で実行時エラー
+import * as FileSystem from "expo-file-system";
+FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+// → Error: Method readAsStringAsync is deprecated
+// → Error: Cannot read property 'Base64' of undefined
+
+// ✅ OK: legacy API を使う（既存コードの最小変更）
+import * as FileSystem from "expo-file-system/legacy";
+FileSystem.readAsStringAsync(uri, { encoding: "base64" }); // 文字列リテラルを使用
+
+// ✅ OK: 新API（File クラス）
+import { File } from "expo-file-system/next";
+const file = new File(uri);
+const base64 = await file.readAsBase64(); // SDK 54 推奨
+```
+
+> **注意**: `EncodingType.Base64` も v17 では undefined になる。必ず文字列リテラル `"base64"` を使うこと。
+
+---
 
 ## ベストプラクティス
 

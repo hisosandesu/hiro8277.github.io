@@ -15,7 +15,7 @@ export function initMonitoring() {
     debug: __DEV__,
     enableAutoSessionTracking: true,
     sessionTrackingIntervalMillis: 10000,
-    tracesSampleRate: __DEV__ ? 0 : 1.0,
+    tracesSampleRate: __DEV__ ? 0 : 0.1,
   });
 
   _initialized = true;
