@@ -9,8 +9,7 @@
       "distribution": "internal",
       "node": "20.19.4",
       "android": {
-        "buildType": "apk",
-        "googleServicesFile": "./android/app/google-services.json"
+        "buildType": "apk"
       }
     },
     "preview": {
@@ -18,8 +17,7 @@
       "channel": "preview",
       "node": "20.19.4",
       "android": {
-        "buildType": "apk",
-        "googleServicesFile": "./android/app/google-services.json"
+        "buildType": "apk"
       }
     },
     "production": {
@@ -28,8 +26,7 @@
       "distribution": "store",
       "channel": "production",
       "android": {
-        "buildType": "app-bundle",
-        "googleServicesFile": "./android/app/google-services.json"
+        "buildType": "app-bundle"
       }
     },
     "development-simulator": {

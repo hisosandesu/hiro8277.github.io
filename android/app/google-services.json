@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1074983642050",
+    "project_id": "ocr-app-57271",
+    "storage_bucket": "ocr-app-57271.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1074983642050:android:066d4e41dd1c8378ac2c5b",
+        "android_client_info": {
+          "package_name": "com.hiro8277.reactnativetextmlkittextrecognition3"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDH4bKdQ9ijhjM2B77u_c0RTTy9Oe10ufo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

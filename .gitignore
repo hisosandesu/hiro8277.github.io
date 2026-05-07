@@ -33,5 +33,8 @@ yarn-error.*
 # local env files
 .env*.local
 
+# Firebase - iOS only (not committed; provide via EAS secrets before iOS build)
+ios/GoogleService-Info.plist
+
 # typescript
 *.tsbuildinfo
