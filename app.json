@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "OCR-APP",
+    "name": "ヨミトルAI",
     "slug": "react-native-text-ml-kit-text-recognition3",
     "plugins": [
       [
@@ -21,9 +21,7 @@
       "expo-secure-store"
     ],
     "version": "1.0.0",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion": "1.0.0",
     "updates": {
       "url": "https://u.expo.dev/28fb87b6-2976-486c-9461-d475f35335dc",
       "fallbackToCacheTimeout": 0
@@ -49,7 +47,7 @@
       "package": "com.hiro8277.reactnativetextmlkittextrecognition3"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.ico"
     },
     "extra": {
       "eas": {
