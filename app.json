@@ -4,6 +4,7 @@
     "slug": "react-native-text-ml-kit-text-recognition3",
     "plugins": [
       "@react-native-firebase/app",
+      "./plugins/withFirebaseAppDelegateSwift",
       [
         "expo-camera",
         {
