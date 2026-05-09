@@ -1,5 +1,139 @@
 # 作業ログ（日付別）
 
+## 2026-05-09: iOS Dev Build 実機テスト開始 + Firebase 初期化エラー修正
+
+### 作業概要
+
+EAS iOS Dev Build の実機インストールに成功し、Metro 接続・OCR 動作を確認。
+Firebase 匿名認証が動かない問題を複数ビルドをかけて調査し、根本原因（@react-native-firebase/app プラグインが Expo SDK 54 の Swift AppDelegate に非対応）を特定して修正した。
+最終ビルド（86d8977a）は Firebase 動作確認待ち。
+
+### 完了した作業
+
+| 作業 | 結果 |
+|------|------|
+| iOS Dev Build 実機インストール（QRコード方式） | ✅ 完了 |
+| iPhone Developer Mode 有効化 | ✅ 完了（設定→プライバシーとセキュリティ） |
+| Metro 接続（WiFi直結・ポート8081ファイアウォール開放） | ✅ 完了 |
+| 実機動作確認（OCR・保存・履歴・AdMob バナー） | ✅ 正常動作 |
+| eas.json に SENTRY_DISABLE_AUTO_UPLOAD=true 追加 | ✅ 完了（Sentry org未設定でもビルド通過） |
+| GoogleService-Info.plist を git commit（gitignore除外） | ✅ 完了（google-services.json と同様の対応） |
+| @react-native-firebase/app を app.json plugins に追加 | ✅ 完了 |
+| withFirebaseAppDelegateSwift.js カスタムプラグイン作成 | ✅ 完了（Expo SDK 54 対応） |
+| authManager.js モジュールレベル auth() を遅延初期化に変更 | ✅ 完了 |
+| RootNavigation.js で getOrCreateAnonymousUser() 呼び出し追加 | ✅ 完了 |
+
+### Firebase 初期化エラーの原因と解決（重要）
+
+**エラー**: `No Firebase App '[DEFAULT]' has been created - call firebase.initializeApp()`
+
+原因の調査過程：
+
+1. **GoogleService-Info.plist が gitignore** → コミットしてもエラー継続
+2. **@react-native-firebase/app が plugins 未登録** → 追加してもエラー継続
+3. **根本原因判明**: `@react-native-firebase/app` v21 の built-in Config Plugin は AppDelegate を修正する際に `self.moduleName = "..."` という regex でアンカー箇所を探す。しかし **Expo SDK 54 の AppDelegate.swift にはこのパターンが存在しない**（`rootViewFactory.view(withModuleName: "main", ...)` 方式に変更済み）。プラグインは `WarningAggregator.addWarningIOS` を呼んで黙ってスキップするため、ビルドは通るがランタイムでクラッシュする。
+
+**修正方法**: `plugins/withFirebaseAppDelegateSwift.js` カスタムプラグインを作成し、`withAppDelegate` mod を使って AppDelegate.swift に直接 `import FirebaseCore` と `FirebaseApp.configure()` を注入。
+
+```javascript
+// plugins/withFirebaseAppDelegateSwift.js
+// didFinishLaunchingWithOptions の開き括弧直後に FirebaseApp.configure() を挿入
+const didFinishLaunchingRegex =
+  /(override func application\([\s\S]*?didFinishLaunchingWithOptions[\s\S]*?\)\s*->\s*Bool\s*\{)/;
+contents = contents.replace(didFinishLaunchingRegex, `$1\n    ${configureCall}`);
+```
+
+app.json plugins 登録順:
+```json
+"@react-native-firebase/app",
+"./plugins/withFirebaseAppDelegateSwift",  ← 必ずこの順番
+```
+
+### 実機テスト結果
+
+| 機能 | 状態 | 備考 |
+|------|------|------|
+| ML Kit OCR（印刷文字） | ✅ 正常 | オフライン動作確認済み |
+| 保存・履歴表示・削除 | ✅ 正常 | |
+| AdMob バナー | ✅ テスト広告表示 | |
+| カメラ撮影後の画像取り込み | ⚠️ 要確認 | iOS 設定→写真→「すべての写真」に変更要 |
+| Firebase 匿名認証 | ⏳ 最新ビルド確認待ち | build 86d8977a |
+| Gemini API（RECEIPT/EDUCATION） | 未確認 | Firebase 確認後に実施 |
+
+### 今日のビルド履歴
+
+| Build ID | 内容 | 状態 |
+|----------|------|------|
+| 91765774 | Sentry auto-upload 無効化 | ✅ 成功（最初の動作ビルド） |
+| 05eadd8d | GoogleService-Info.plist コミット | ✅ 成功（Firebase エラー継続） |
+| 0b212a8a | @react-native-firebase/app プラグイン追加 | ✅ 成功（Firebase エラー継続） |
+| 86d8977a | withFirebaseAppDelegateSwift.js 追加（最終修正） | ✅ 成功（Firebase 動作確認待ち） |
+
+### 次回作業
+
+1. build 86d8977a で Firebase Console に匿名ユーザーが追加されるか確認
+2. カメラ・ギャラリー権限（iOS 設定→写真→すべての写真）を変更して再テスト
+3. Gemini API（RECEIPT/EDUCATION モード）を実機で確認
+4. Cloud Vision iOS 対応（cloudVisionOCR.js に `X-Ios-Bundle-Identifier` ヘッダー追加）
+5. Android 内部テスト審査完了後 → RevenueCat フェーズ3実装
+
+---
+
+## 2026-05-08: Google Play Console 内部テスト提出 + ストア掲載情報完了
+
+### 作業概要
+
+フェーズ 3（RevenueCat サブスクリプション）実装に向けた Google Play Console 設定を完了し、
+内部テスト版のリリースを提出（審査待ち）。次回は審査完了後に定期購入商品作成から再開。
+
+### 完了した作業
+
+| 作業 | 結果 |
+|------|------|
+| ストア掲載情報（説明文・スクリーンショット・フィーチャーグラフィック） | ✅ 完了 |
+| 広告 ID 宣言（AD_ID）| ✅ 完了（「広告・マーケティング」を選択） |
+| Google Play Console 本人確認 | ✅ 提出済み（審査中） |
+| EAS Build production（AAB）| ✅ 完了 |
+| 内部テストトラックへ AAB アップロード・提出 | ✅ 審査待ち |
+
+### 広告 ID 宣言の判断根拠
+
+`react-native-google-mobile-ads` (v16.2.3) を使用しているため AD_ID 権限が自動統合される。
+選択カテゴリ: **「広告・マーケティング」**（インタースティシャル・バナー・ネイティブ広告配信のため）
+`requestNonPersonalizedAdsOnly: false` 設定のため、ターゲティング広告として申告。
+
+### 内部テスト提出の注意点
+
+- 難読化解除ファイル（ProGuard mapping）の警告が出たが**無視してリリース**（警告のみ・エラーではない）
+- Sentry が独自でソースマップを管理しているため、Google Play のクラッシュ分析は補助的に使う方針
+- 審査完了まで通常 **数時間〜最大 3 日**。承認メールが nakaima8277@gmail.com に届く
+
+### 次回作業（内部テスト審査完了後に実施）
+
+```
+① premium_monthly 定期購入商品を作成
+   └ 収益化 → 商品 → 定期購入 → 「定期購入を作成」
+   └ 製品ID: premium_monthly / ベースプランID: monthly-base / 価格: ¥480
+
+② RevenueCat コンソール設定（app.revenuecat.com）
+   └ プロジェクト "OCR-APP" 作成
+   └ Android アプリ追加 → Public API Key を .env.local に保存
+   └ Entitlement: "premium" 作成
+   └ Product: "premium_monthly:monthly-base" 登録
+   └ Offering: $rc_monthly を default に設定
+   └ Google Play Service Account と連携
+
+③ コード実装 Step 3: react-native-purchases 統合
+   └ react-native-purchases インストール
+   └ app.json Config Plugin 追加
+   └ src/utils/purchaseManager.js 作成
+
+④ コード実装 Step 4: PaywallModal.js 作成
+   └ EAS Dev Build 再ビルド（react-native-purchases はネイティブモジュール）
+```
+
+---
+
 ## 2026-04-09: mlKitTextReconstructor 精度改善 + receiptParser Pattern 3 修正
 
 ### 変更ファイル

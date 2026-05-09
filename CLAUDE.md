@@ -184,6 +184,35 @@ import { Camera } from "lucide-react-native";
 
 `react-native-text-ml-kit-text-recognition3`（expo.dev 登録値）に固定。**変更すると EAS Build / `eas credentials` が全て失敗する**。
 
+### iOS 実機テスト（Windows 11 環境）
+
+- **Developer Mode**: `設定 → プライバシーとセキュリティ → デベロッパモード → ON → 再起動`（USB 不要・iPhone 単体で完結）
+- **Ad Hoc インストール**: Safari のみ対応（Chrome・LINE 内ブラウザは `itms-services://` 未対応で無言失敗）
+- **Metro 接続**: PC と iPhone を同じ WiFi に接続 + Windows Firewall でポート 8081 を開放
+  ```powershell
+  # 管理者 PowerShell で実行
+  New-NetFirewallRule -DisplayName "Expo Metro 8081" -Direction Inbound -Protocol TCP -LocalPort 8081 -Action Allow -Profile Private
+  ```
+- **接続失敗時**: `npx expo start --dev-client --tunnel`（@expo/ws-tunnel 自動使用）
+- **カメラ/ギャラリー権限**: `設定 → ヨミトルAI → 写真 → すべての写真` に変更が必要
+
+### Firebase iOS（@react-native-firebase v21 + Expo SDK 54）
+
+**重要: @react-native-firebase/app v21 の built-in Config Plugin は Expo SDK 54 非対応**
+
+- v21 プラグインは AppDelegate に `self.moduleName = "..."` regex でアンカーを探すが、SDK 54 の Swift AppDelegate にこのパターンは存在しない
+- プラグインは黙ってスキップ → ビルドは通るが `FirebaseApp.configure()` が未呼び出し → JS で `auth()` 呼び出し時に `No Firebase App '[DEFAULT]'` エラー
+- **解決策**: `plugins/withFirebaseAppDelegateSwift.js` カスタムプラグインで AppDelegate.swift に直接注入
+
+```json
+// app.json plugins 登録順（必ずこの順番）
+"@react-native-firebase/app",
+"./plugins/withFirebaseAppDelegateSwift"
+```
+
+- `GoogleService-Info.plist` は `google-services.json` と同様に **git commit 必須**（EAS Build は git clone で動作）
+- `authManager.js` のモジュールレベル `auth()` 呼び出しは禁止 → `ensureAuthListener()` パターンで遅延初期化
+
 ### その他
 
 - `react-native-reanimated ~4.1.1`: `newArchEnabled=true` が必須（変更不可）
@@ -217,9 +246,17 @@ await FileSystem.writeAsStringAsync(filePath, base64, { encoding: "base64" });
 ## EAS Build 手順
 
 ```bash
+# Android
 eas build --profile development --platform android --no-wait  # Dev Build（実機テスト用）
 eas build --profile production --platform android             # Google Play 提出用（AAB）
-npx expo start --dev-client                                   # ビルド後（Dev）
+
+# iOS
+eas build --profile development --platform ios --no-wait      # Dev Build（Ad Hoc 実機テスト用）
+eas build --profile production --platform ios                 # App Store 提出用（.ipa）
+
+# 共通
+npx expo start --dev-client                                   # Metro 起動（WiFi直結）
+npx expo start --dev-client --tunnel                          # Metro 起動（Tunnel）
 ```
 
 `.env.local` に必要な環境変数:
@@ -287,20 +324,25 @@ eas secret:create --name EXPO_PUBLIC_ADMOB_NATIVE_ID --value ca-app-pub-40834226
 | # | タスク | 状態 |
 |---|--------|------|
 | 1 | プライバシーポリシー URL 登録 | ✅ 完了 |
-| 2 | Google Play Console 本人確認 | 確認中 |
-| 3 | ストア掲載情報入力（説明文・スクリーンショット等） | 未実施 |
-| 4 | EAS Build production → Google Play 内部テスト提出 | 未実施 |
-| 5 | フェーズ 3: RevenueCat サブスクリプション | 実装中（STEP 5〜8 残） |
-| 6 | フェーズ 4: Firebase Functions Proxy | 未実装（Blaze プランが前提） |
-| 7 | iOS ビルド（Apple Developer Program 承認待ち） | 承認後 |
-| 8 | EAS Dev Build 再ビルド（Firebase 追加のため） | ✅ 完了 2026-05-07（build 4932d71f） |
-| 9 | Gemini API クォータを Cloud Console で設定（推奨200 req/day） | 未実施 |
+| 2 | Google Play Console 本人確認 | ✅ 提出済み（審査中・24〜72時間） |
+| 3 | ストア掲載情報入力（説明文・スクリーンショット等） | ✅ 完了 2026-05-08 |
+| 4 | EAS Build production → Google Play 内部テスト提出 | ✅ 提出済み（審査待ち 2026-05-08） |
+| 5 | Google Play Console 広告 ID 宣言（AD_ID）| ✅ 完了 2026-05-08（広告・マーケティング選択） |
+| 6 | premium_monthly 定期購入商品作成 | ⏳ 内部テスト審査完了後に実施 |
+| 7 | RevenueCat コンソール設定（API Key 取得・商品登録） | ⏳ premium_monthly 作成後に実施 |
+| 8 | フェーズ 3: RevenueCat サブスクリプション（Step 3〜4） | ⏳ RevenueCat 設定完了後にコード実装 |
+| 9 | フェーズ 4: Firebase Functions Proxy | 未実装（Blaze プランが前提） |
+| 10 | iOS Dev Build 実機テスト | ⏳ Firebase 動作確認待ち（build 86d8977a） |
+| 11 | EAS Dev Build 再ビルド（Firebase 追加のため） | ✅ 完了 2026-05-07（build 4932d71f） |
+| 12 | Gemini API クォータを Cloud Console で設定（推奨200 req/day） | 未実施 |
+| 13 | Cloud Vision iOS 対応（X-Ios-Bundle-Identifier ヘッダー追加） | 未実施 |
+| 14 | iOS Production Build → App Store 提出 | ⏳ iOS Dev テスト完了後 |
 
 ---
 
 ## 設計ドキュメント（詳細参照先）
 
-- [docs/history/work-logs.md](docs/history/work-logs.md) — 日付別作業ログ（2026-02-13〜05-07）
+- [docs/history/work-logs.md](docs/history/work-logs.md) — 日付別作業ログ（2026-02-13〜05-09）
 - [docs/planning/phase3-4-plan.md](docs/planning/phase3-4-plan.md) — フェーズ3+4（RevenueCat+Firebase）実装計画
 - [docs/technical/reconstructor-design.md](docs/technical/reconstructor-design.md) — mlKitTextReconstructor アルゴリズム詳細
 - [docs/technical/parser-design.md](docs/technical/parser-design.md) — receiptParser 設計原則
