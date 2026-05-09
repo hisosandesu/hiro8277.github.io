@@ -4,52 +4,54 @@ const path = require("path");
 
 // RNFBApp imports non-modular React Native headers (RCTConvert.h, etc.)
 // inside a framework module when useFrameworks:"static" is enabled.
-// Fix: set ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES=YES for all pod targets.
-// We inject into the EXISTING post_install block (CocoaPods forbids multiple blocks).
+// Fix: add pod_target_xcconfig to the podspec so the setting applies only to
+// RNFBApp without touching the Podfile's post_install block (which CocoaPods
+// forbids having multiple of).
 function withAllowNonModularIncludes(config) {
   return withDangerousMod(config, [
     "ios",
     (config) => {
-      const podfilePath = path.join(
-        config.modRequest.platformProjectRoot,
-        "Podfile"
+      const podspecPath = path.join(
+        config.modRequest.projectRoot,
+        "node_modules/@react-native-firebase/app/RNFBApp.podspec"
       );
-      const contents = fs.readFileSync(podfilePath, "utf-8");
 
-      if (
-        contents.includes("ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES")
-      ) {
+      if (!fs.existsSync(podspecPath)) {
+        console.warn(
+          "[withAllowNonModularIncludes] RNFBApp.podspec not found, skipping."
+        );
         return config;
       }
 
-      const injection = [
-        "  installer.pods_project.targets.each do |target|",
-        "    target.build_configurations.each do |cfg|",
-        "      cfg.build_settings['ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'",
-        "    end",
-        "  end",
-      ].join("\n");
+      const contents = fs.readFileSync(podspecPath, "utf-8");
 
-      // Inject at the top of the existing post_install block
-      const patched = contents.replace(
-        /^(post_install do \|installer\|)/m,
-        `$1\n${injection}`
-      );
-
-      if (patched === contents) {
-        // No existing post_install — append a new block as fallback
-        const newBlock = [
-          "",
-          "post_install do |installer|",
-          injection,
-          "end",
-          "",
-        ].join("\n");
-        fs.writeFileSync(podfilePath, contents + newBlock);
-      } else {
-        fs.writeFileSync(podfilePath, patched);
+      if (contents.includes("ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES")) {
+        return config;
       }
 
+      // Insert xcconfig setting before the final `end` of the Pod::Spec block
+      const xcconfig = [
+        "",
+        "  s.pod_target_xcconfig = {",
+        "    'ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES' => 'YES'",
+        "  }",
+      ].join("\n");
+
+      // Replace the last `end` in the file (closes the Pod::Spec.new block)
+      const lastEndIdx = contents.lastIndexOf("\nend");
+      if (lastEndIdx === -1) {
+        console.warn(
+          "[withAllowNonModularIncludes] Could not find closing `end` in RNFBApp.podspec, skipping."
+        );
+        return config;
+      }
+
+      const patched =
+        contents.slice(0, lastEndIdx) +
+        xcconfig +
+        contents.slice(lastEndIdx);
+
+      fs.writeFileSync(podspecPath, patched);
       return config;
     },
   ]);
