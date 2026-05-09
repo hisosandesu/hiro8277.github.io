@@ -8,6 +8,9 @@
       "developmentClient": true,
       "distribution": "internal",
       "node": "20.19.4",
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      },
       "android": {
         "buildType": "apk"
       },
@@ -19,6 +22,9 @@
       "distribution": "internal",
       "channel": "preview",
       "node": "20.19.4",
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      },
       "android": {
         "buildType": "apk"
       }
@@ -28,6 +34,9 @@
       "node": "20.19.4",
       "distribution": "store",
       "channel": "production",
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      },
       "android": {
         "buildType": "app-bundle"
       }
@@ -36,6 +45,9 @@
       "developmentClient": true,
       "distribution": "internal",
       "node": "20.19.4",
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      },
       "ios": {
         "simulator": true
       },
