@@ -57,8 +57,8 @@ app.json plugins 登録順:
 | 保存・履歴表示・削除 | ✅ 正常 | |
 | AdMob バナー | ✅ テスト広告表示 | |
 | カメラ撮影後の画像取り込み | ⚠️ 要確認 | iOS 設定→写真→「すべての写真」に変更要 |
-| Firebase 匿名認証 | ⏳ 最新ビルド確認待ち | build 86d8977a |
-| Gemini API（RECEIPT/EDUCATION） | 未確認 | Firebase 確認後に実施 |
+| Firebase 匿名認証 | ✅ 正常 | build 86d8977a で Firebase Console に匿名ユーザー追加を確認 |
+| Gemini API（RECEIPT/EDUCATION） | 未確認 | 次回実施 |
 
 ### 今日のビルド履歴
 
@@ -67,15 +67,15 @@ app.json plugins 登録順:
 | 91765774 | Sentry auto-upload 無効化 | ✅ 成功（最初の動作ビルド） |
 | 05eadd8d | GoogleService-Info.plist コミット | ✅ 成功（Firebase エラー継続） |
 | 0b212a8a | @react-native-firebase/app プラグイン追加 | ✅ 成功（Firebase エラー継続） |
-| 86d8977a | withFirebaseAppDelegateSwift.js 追加（最終修正） | ✅ 成功（Firebase 動作確認待ち） |
+| 86d8977a | withFirebaseAppDelegateSwift.js 追加（最終修正） | ✅ 成功・Firebase 匿名認証動作確認済み |
 
 ### 次回作業
 
-1. build 86d8977a で Firebase Console に匿名ユーザーが追加されるか確認
-2. カメラ・ギャラリー権限（iOS 設定→写真→すべての写真）を変更して再テスト
-3. Gemini API（RECEIPT/EDUCATION モード）を実機で確認
-4. Cloud Vision iOS 対応（cloudVisionOCR.js に `X-Ios-Bundle-Identifier` ヘッダー追加）
-5. Android 内部テスト審査完了後 → RevenueCat フェーズ3実装
+1. カメラ・ギャラリー権限（iOS 設定→写真→すべての写真）を変更して再テスト
+2. Gemini API（RECEIPT/EDUCATION モード）を実機で確認
+3. Cloud Vision iOS 対応（cloudVisionOCR.js に `X-Ios-Bundle-Identifier` ヘッダー追加）
+4. Android 内部テスト審査完了後 → RevenueCat フェーズ3実装
+5. iOS Production Build → App Store Connect 提出
 
 ---
 

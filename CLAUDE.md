@@ -332,7 +332,7 @@ eas secret:create --name EXPO_PUBLIC_ADMOB_NATIVE_ID --value ca-app-pub-40834226
 | 7 | RevenueCat コンソール設定（API Key 取得・商品登録） | ⏳ premium_monthly 作成後に実施 |
 | 8 | フェーズ 3: RevenueCat サブスクリプション（Step 3〜4） | ⏳ RevenueCat 設定完了後にコード実装 |
 | 9 | フェーズ 4: Firebase Functions Proxy | 未実装（Blaze プランが前提） |
-| 10 | iOS Dev Build 実機テスト | ⏳ Firebase 動作確認待ち（build 86d8977a） |
+| 10 | iOS Dev Build 実機テスト | ✅ 完了 2026-05-09（Firebase 匿名認証・OCR・AdMob 動作確認済み） |
 | 11 | EAS Dev Build 再ビルド（Firebase 追加のため） | ✅ 完了 2026-05-07（build 4932d71f） |
 | 12 | Gemini API クォータを Cloud Console で設定（推奨200 req/day） | 未実施 |
 | 13 | Cloud Vision iOS 対応（X-Ios-Bundle-Identifier ヘッダー追加） | 未実施 |
