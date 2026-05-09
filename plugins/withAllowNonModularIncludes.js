@@ -4,54 +4,78 @@ const path = require("path");
 
 // RNFBApp imports non-modular React Native headers (RCTConvert.h, etc.)
 // inside a framework module when useFrameworks:"static" is enabled.
-// Fix: add pod_target_xcconfig to the podspec so the setting applies only to
-// RNFBApp without touching the Podfile's post_install block (which CocoaPods
-// forbids having multiple of).
+// Fix: inject ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES into the
+// RNFBApp target's build configurations via the existing post_install hook.
+//
+// Root cause of previous failures:
+//   - Expo Podfile places post_install INDENTED inside the target block ("  post_install do |installer|")
+//   - Old regex /^(post_install do \|installer\|)/m required zero leading whitespace → never matched
+//   - s.pod_target_xcconfig in the podspec generates .xcconfig but does not propagate to
+//     the actual Xcode build settings that the compiler uses → compile error persists
 function withAllowNonModularIncludes(config) {
   return withDangerousMod(config, [
     "ios",
     (config) => {
-      const podspecPath = path.join(
+      const podfilePath = path.join(
         config.modRequest.projectRoot,
-        "node_modules/@react-native-firebase/app/RNFBApp.podspec"
+        "ios",
+        "Podfile"
       );
 
-      if (!fs.existsSync(podspecPath)) {
+      if (!fs.existsSync(podfilePath)) {
         console.warn(
-          "[withAllowNonModularIncludes] RNFBApp.podspec not found, skipping."
+          "[withAllowNonModularIncludes] Podfile not found, skipping."
         );
         return config;
       }
 
-      const contents = fs.readFileSync(podspecPath, "utf-8");
+      const contents = fs.readFileSync(podfilePath, "utf-8");
 
-      if (contents.includes("ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES")) {
+      if (
+        contents.includes("ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES")
+      ) {
+        return config; // already patched
+      }
+
+      // Match post_install regardless of leading indent (Expo puts it inside target block)
+      // Captures: [1] = leading whitespace, [2] = installer variable name
+      const postInstallRegex = /^(\s*)post_install\s+do\s+\|(\w+)\|/m;
+      const match = contents.match(postInstallRegex);
+
+      if (!match) {
+        console.warn(
+          "[withAllowNonModularIncludes] post_install block not found in Podfile, skipping."
+        );
         return config;
       }
 
-      // Insert xcconfig setting before the final `end` of the Pod::Spec block
-      const xcconfig = [
+      const outerIndent = match[1]; // e.g. "  " when inside target block
+      const installerVar = match[2]; // e.g. "installer"
+      const innerIndent = outerIndent + "  "; // body of post_install block
+
+      // Use 'build_config' to avoid shadowing the outer 'config' variable
+      // that Expo defines via `config = use_native_modules!`
+      const injection = [
+        `${innerIndent}${installerVar}.pods_project.targets.each do |target|`,
+        `${innerIndent}  if target.name == "RNFBApp"`,
+        `${innerIndent}    target.build_configurations.each do |build_config|`,
+        `${innerIndent}      build_config.build_settings['ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'`,
+        `${innerIndent}    end`,
+        `${innerIndent}  end`,
+        `${innerIndent}end`,
         "",
-        "  s.pod_target_xcconfig = {",
-        "    'ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES' => 'YES'",
-        "  }",
       ].join("\n");
 
-      // Replace the last `end` in the file (closes the Pod::Spec.new block)
-      const lastEndIdx = contents.lastIndexOf("\nend");
-      if (lastEndIdx === -1) {
-        console.warn(
-          "[withAllowNonModularIncludes] Could not find closing `end` in RNFBApp.podspec, skipping."
-        );
-        return config;
-      }
+      // Append injection immediately after the opening "post_install do |installer|" line
+      const patched = contents.replace(
+        postInstallRegex,
+        (matched) => matched + "\n" + injection
+      );
 
-      const patched =
-        contents.slice(0, lastEndIdx) +
-        xcconfig +
-        contents.slice(lastEndIdx);
-
-      fs.writeFileSync(podspecPath, patched);
+      fs.writeFileSync(podfilePath, patched);
+      console.log(
+        "[withAllowNonModularIncludes] Injected ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES into RNFBApp target."
+      );
       return config;
     },
   ]);
