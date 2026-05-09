@@ -35,6 +35,7 @@ yarn-error.*
 
 # Firebase - iOS only (not committed; provide via EAS secrets before iOS build)
 ios/GoogleService-Info.plist
+GoogleService-Info.plist
 
 # typescript
 *.tsbuildinfo

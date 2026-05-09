@@ -10,6 +10,9 @@
       "node": "20.19.4",
       "android": {
         "buildType": "apk"
+      },
+      "ios": {
+        "simulator": false
       }
     },
     "preview": {

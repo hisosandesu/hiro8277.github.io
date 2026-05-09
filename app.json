@@ -18,7 +18,17 @@
         }
       ],
       "@sentry/react-native",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.0",
+            "useFrameworks": "static"
+          }
+        }
+      ],
+      "./plugins/withAllowNonModularIncludes"
     ],
     "version": "1.0.0",
     "runtimeVersion": "1.0.0",
@@ -37,14 +47,25 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.hiro8277.reactnativetextmlkittextrecognition3"
+      "bundleIdentifier": "com.hiro8277.reactnativetextmlkittextrecognition3",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "config": {
+        "googleMobileAdsAppId": "ca-app-pub-4083422635947412~9756980839"
+      },
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundImage": "./assets/adaptive-icon-background.png"
       },
-      "package": "com.hiro8277.reactnativetextmlkittextrecognition3"
+      "package": "com.hiro8277.reactnativetextmlkittextrecognition3",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.ico"
