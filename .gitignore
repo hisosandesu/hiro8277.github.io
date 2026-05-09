@@ -33,9 +33,8 @@ yarn-error.*
 # local env files
 .env*.local
 
-# Firebase - iOS only (not committed; provide via EAS secrets before iOS build)
-ios/GoogleService-Info.plist
-GoogleService-Info.plist
+# Firebase - iOS config committed (client config, not a secret key; private repo)
+# ios/GoogleService-Info.plist は git commit 済み（google-services.json と同様）
 
 # typescript
 *.tsbuildinfo
