@@ -1,4 +1,5 @@
 import auth from "@react-native-firebase/auth";
+import { getApp } from "@react-native-firebase/app";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const UID_CACHE_KEY = "firebase_anon_uid";
@@ -7,13 +8,14 @@ let _currentUser = null;
 let _listenerAttached = false;
 
 // Attach onAuthStateChanged lazily on first use, NOT at module-import time.
-// Module-level `auth()` calls run before any React lifecycle hook fires, which
+// Module-level auth calls run before any React lifecycle hook fires, which
 // races the native Firebase initialization in AppDelegate (FirebaseApp.configure)
 // and can throw "No Firebase App '[DEFAULT]' has been created".
+// auth(getApp()) is the v21 non-deprecated form of auth().
 function ensureAuthListener() {
   if (_listenerAttached) return;
   _listenerAttached = true;
-  auth().onAuthStateChanged((user) => {
+  auth(getApp()).onAuthStateChanged((user) => {
     _currentUser = user;
   });
 }
@@ -27,13 +29,13 @@ export async function getOrCreateAnonymousUser() {
 
   if (_currentUser) return _currentUser.uid;
 
-  const currentUser = auth().currentUser;
+  const currentUser = auth(getApp()).currentUser;
   if (currentUser) {
     _currentUser = currentUser;
     return currentUser.uid;
   }
 
-  const userCredential = await auth().signInAnonymously();
+  const userCredential = await auth(getApp()).signInAnonymously();
   _currentUser = userCredential.user;
 
   await AsyncStorage.setItem(UID_CACHE_KEY, _currentUser.uid);
@@ -47,7 +49,7 @@ export async function getOrCreateAnonymousUser() {
  */
 export async function getIdToken(forceRefresh = false) {
   ensureAuthListener();
-  const user = auth().currentUser ?? _currentUser;
+  const user = auth(getApp()).currentUser ?? _currentUser;
   if (!user) return null;
   return user.getIdToken(forceRefresh);
 }
@@ -57,5 +59,5 @@ export async function getIdToken(forceRefresh = false) {
  */
 export function getCurrentUid() {
   ensureAuthListener();
-  return (auth().currentUser ?? _currentUser)?.uid ?? null;
+  return (auth(getApp()).currentUser ?? _currentUser)?.uid ?? null;
 }

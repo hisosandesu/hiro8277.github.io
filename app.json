@@ -64,6 +64,7 @@
         "backgroundImage": "./assets/adaptive-icon-background.png"
       },
       "package": "com.hiro8277.reactnativetextmlkittextrecognition3",
+      "googleServicesFile": "./android/app/google-services.json",
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
