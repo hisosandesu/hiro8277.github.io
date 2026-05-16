@@ -15,13 +15,19 @@ let _listenerAttached = false;
 function ensureAuthListener() {
   if (_listenerAttached) return;
   _listenerAttached = true;
+  // Only clear _currentUser on sign-out.
+  // Sign-in is handled exclusively by getOrCreateAnonymousUser() / forceReAuth()
+  // so that an unvalidated cached user from a previous Firebase project cannot
+  // bypass the getIdToken(true) validation via the fast-path.
   auth(getApp()).onAuthStateChanged((user) => {
-    _currentUser = user;
+    if (!user) _currentUser = null;
   });
 }
 
 /**
  * Firebase 匿名認証でサインイン（またはキャッシュ済み UID を返す）。
+ * キャッシュされたユーザーのトークンが無効（別プロジェクト等）な場合は
+ * サインアウトして再サインインする自己修復ロジックを含む。
  * @returns {Promise<string>} Firebase UID
  */
 export async function getOrCreateAnonymousUser() {
@@ -31,13 +37,39 @@ export async function getOrCreateAnonymousUser() {
 
   const currentUser = auth(getApp()).currentUser;
   if (currentUser) {
-    _currentUser = currentUser;
-    return currentUser.uid;
+    try {
+      // force refresh でトークンが有効か（正しいプロジェクトか）を検証する
+      await currentUser.getIdToken(true);
+      _currentUser = currentUser;
+      return _currentUser.uid;
+    } catch (e) {
+      // ネットワークエラーはキャッシュユーザーをそのまま使う（オフライン時の誤サインアウト防止）
+      if (e?.code === "auth/network-request-failed") {
+        _currentUser = currentUser;
+        return _currentUser.uid;
+      }
+      // auth エラー（別プロジェクト・無効状態等）→ サインアウトして再サインイン
+      try { await auth(getApp()).signOut(); } catch { /* ignore */ }
+    }
   }
 
   const userCredential = await auth(getApp()).signInAnonymously();
   _currentUser = userCredential.user;
 
+  await AsyncStorage.setItem(UID_CACHE_KEY, _currentUser.uid);
+  return _currentUser.uid;
+}
+
+/**
+ * 強制的に再認証する（signOut → signInAnonymously）。
+ * サーバーから 401 を受け取った場合のリカバリ用。
+ * @returns {Promise<string>} 新しい Firebase UID
+ */
+export async function forceReAuth() {
+  _currentUser = null;
+  try { await auth(getApp()).signOut(); } catch { /* ignore */ }
+  const userCredential = await auth(getApp()).signInAnonymously();
+  _currentUser = userCredential.user;
   await AsyncStorage.setItem(UID_CACHE_KEY, _currentUser.uid);
   return _currentUser.uid;
 }

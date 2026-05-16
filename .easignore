@@ -8,3 +8,8 @@ android/app/build/
 android/.gradle/
 ios/build/
 ios/Pods/
+.claude/
+.agents/
+.serena/
+.playwright-mcp/
+docs/

@@ -1,11 +1,10 @@
 import { StyleSheet, TouchableOpacity } from "react-native";
-import Icon from "@react-native-vector-icons/fontawesome6";
 import { COLORS } from "../constants/colors";
 
-export default function ActionButton({ onPress, iconName, style }) {
+export default function ActionButton({ onPress, IconComponent, style }) {
   return (
     <TouchableOpacity style={[styles.button, style]} onPress={onPress}>
-      <Icon name={iconName} size={25} color={COLORS.white} solid />
+      <IconComponent size={25} color={COLORS.white} />
     </TouchableOpacity>
   );
 }

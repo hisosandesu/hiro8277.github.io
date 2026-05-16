@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>プライバシーポリシー - TEXT SCAN</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans",
+                   "Noto Sans JP", sans-serif;
+      background: #f8f9fa;
+      color: #212529;
+      line-height: 1.8;
+    }
+    header {
+      background: #2c6fad;
+      color: #fff;
+      padding: 40px 24px 32px;
+      text-align: center;
+    }
+    header h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 6px; }
+    header p  { font-size: 0.9rem; opacity: 0.85; }
+    main {
+      max-width: 760px;
+      margin: 40px auto;
+      padding: 0 20px 60px;
+    }
+    section { margin-bottom: 36px; }
+    h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #2c6fad;
+      border-left: 4px solid #2c6fad;
+      padding-left: 10px;
+      margin-bottom: 12px;
+    }
+    p { margin-bottom: 10px; }
+    ul { padding-left: 20px; margin-bottom: 10px; }
+    ul li { margin-bottom: 6px; }
+    a { color: #2c6fad; }
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .updated {
+      text-align: right;
+      font-size: 0.82rem;
+      color: #868e96;
+      margin-bottom: 32px;
+    }
+    footer {
+      text-align: center;
+      font-size: 0.82rem;
+      color: #868e96;
+      padding: 20px;
+      border-top: 1px solid #dee2e6;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>プライバシーポリシー</h1>
+  <p>TEXT SCAN</p>
+</header>
+
+<main>
+  <p class="updated">最終更新日：2026年5月7日</p>
+
+  <div class="card">
+
+    <section>
+      <h2>1. はじめに</h2>
+      <p>
+        TEXT SCAN（以下「本アプリ」）をご利用いただきありがとうございます。
+        本ポリシーは、本アプリが収集・利用する情報について説明します。
+        本アプリをご利用になることで、本ポリシーに同意したものとみなします。
+      </p>
+    </section>
+
+    <section>
+      <h2>2. 収集する情報</h2>
+      <p>本アプリは以下の情報を取り扱います。</p>
+      <ul>
+        <li>
+          <strong>カメラ・画像</strong>：テキスト認識（OCR）のために、カメラで撮影した画像
+          またはフォトライブラリから選択した画像を取得します。
+          一部の認識処理では Google のサーバーに一時的に送信されます（詳細は第4条）。
+        </li>
+        <li>
+          <strong>OCR 結果テキスト</strong>：認識したテキストを端末内にのみ保存します。
+          外部サーバーへの自動送信は行いません。
+        </li>
+        <li>
+          <strong>匿名ユーザー ID</strong>：サービス提供のため、Firebase による匿名の識別子を自動生成します。
+          氏名・メールアドレス・電話番号等の個人情報は一切含まれません。
+        </li>
+        <li>
+          <strong>使用回数カウンター</strong>：API 利用上限の管理のため、日次・月次の使用回数を端末内に記録します。
+          外部には送信されません。
+        </li>
+        <li>
+          <strong>広告識別子（Advertising ID）</strong>：広告配信のため、Google AdMob により
+          端末の広告識別子・デバイス情報・アプリ使用状況を収集します。
+        </li>
+        <li>
+          <strong>購入情報</strong>：プレミアムサブスクリプションの購入時に、
+          RevenueCat を通じて購入情報が処理されます。
+        </li>
+        <li>
+          <strong>エラーログ・診断情報</strong>：アプリの安定性向上のため、クラッシュ情報および
+          デバイス診断情報を Sentry に送信することがあります。個人を特定する情報は含まれません。
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>3. 情報の利用目的</h2>
+      <ul>
+        <li>画像内のテキストを認識・表示するため</li>
+        <li>認識結果を端末内の履歴に保存するため</li>
+        <li>サービスの利用回数管理および適切な機能制限のため</li>
+        <li>広告を表示するため（Google AdMob）</li>
+        <li>プレミアムサブスクリプションの権限管理のため</li>
+        <li>アプリの不具合を検出・修正するため</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>4. 第三者サービスへの情報提供</h2>
+      <p>本アプリは以下の第三者サービスを利用します。各サービスのプライバシーポリシーもご確認ください。</p>
+      <ul>
+        <li>
+          <strong>Google ML Kit（Google LLC）</strong>：標準的なテキスト認識を端末上でオフライン実行します。
+          画像データは外部に送信されません。<br />
+          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google プライバシーポリシー</a>
+        </li>
+        <li>
+          <strong>Google Gemini API（Google LLC）</strong>：レシート・教育コンテンツの構造化認識のため、
+          画像データを Google のサーバーに一時的に送信することがあります。
+          送信データは認識処理にのみ使用されます。<br />
+          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google プライバシーポリシー</a>
+        </li>
+        <li>
+          <strong>Google Cloud Vision API（Google LLC）</strong>：手書き文字認識のため、
+          画像データを Google のサーバーに一時的に送信することがあります。<br />
+          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google プライバシーポリシー</a>
+        </li>
+        <li>
+          <strong>Google AdMob（Google LLC）</strong>：広告配信のため、広告識別子・デバイス情報・
+          アプリ使用データを収集し、Google と共有します。<br />
+          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google プライバシーポリシー</a>
+        </li>
+        <li>
+          <strong>Firebase Authentication（Google LLC）</strong>：匿名ユーザー識別のため、
+          自動生成された匿名 ID を Firebase サーバーに送信します。個人情報は含まれません。<br />
+          <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener">Firebase プライバシーポリシー</a>
+        </li>
+        <li>
+          <strong>RevenueCat（RevenueCat, Inc.）</strong>：プレミアムサブスクリプションの管理のため、
+          購入情報および匿名ユーザー ID を RevenueCat のサーバーに送信します。<br />
+          <a href="https://www.revenuecat.com/privacy" target="_blank" rel="noopener">RevenueCat プライバシーポリシー</a>
+        </li>
+        <li>
+          <strong>Sentry（Functional Software, Inc.）</strong>：アプリのエラー監視のため、
+          クラッシュ情報・デバイス診断情報を Sentry に送信することがあります。<br />
+          <a href="https://sentry.io/privacy/" target="_blank" rel="noopener">Sentry プライバシーポリシー</a>
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>5. データの保存について</h2>
+      <ul>
+        <li>OCR 履歴テキストは端末内にのみ保存されます。</li>
+        <li>クリップボードにコピーしたテキストは、30 秒後に自動的に消去されます。</li>
+        <li>画像データは本アプリのサーバーには保存されません。</li>
+        <li>ユーザーはいつでもアプリ内の履歴を削除できます。</li>
+        <li>使用回数カウンターは端末内にのみ保存され、月次でリセットされます。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>6. 必要なアクセス権限</h2>
+      <ul>
+        <li><strong>カメラ</strong>：文書や印刷物を撮影してテキストを認識するため</li>
+        <li><strong>フォトライブラリ</strong>：保存済みの画像からテキストを認識するため</li>
+      </ul>
+      <p>上記以外の権限は要求しません。</p>
+    </section>
+
+    <section>
+      <h2>7. サブスクリプションについて</h2>
+      <p>
+        本アプリはプレミアムプラン（月額）を提供しています。
+        課金処理は Google Play を通じて行われます。
+        サブスクリプションの管理には RevenueCat を使用し、
+        購入情報が RevenueCat のサーバーに送信されます。
+        サブスクリプションのキャンセルは Google Play の設定からいつでも行えます。
+      </p>
+    </section>
+
+    <section>
+      <h2>8. お子様のプライバシー</h2>
+      <p>
+        本アプリは 13 歳未満のお子様を対象としていません。
+        13 歳未満のお子様から意図せず個人情報を収集した場合、
+        速やかに削除いたします。
+      </p>
+    </section>
+
+    <section>
+      <h2>9. プライバシーポリシーの変更</h2>
+      <p>
+        本ポリシーは必要に応じて更新されることがあります。
+        重要な変更がある場合は、本ページにて告知します。
+        定期的にご確認いただくことをお勧めします。
+      </p>
+    </section>
+
+    <section>
+      <h2>10. お問い合わせ</h2>
+      <p>本ポリシーに関するご質問は、下記までご連絡ください。</p>
+      <p>
+        <strong>メールアドレス</strong>：
+        <a href="mailto:nakaima8277@gmail.com">nakaima8277@gmail.com</a>
+      </p>
+    </section>
+
+  </div>
+</main>
+
+<footer>
+  &copy; 2026 TEXT SCAN. All rights reserved.
+</footer>
+
+</body>
+</html>

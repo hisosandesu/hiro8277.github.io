@@ -17,7 +17,7 @@ export default function HomeStack() {
       <Stack.Screen
         name="Home"
         component={HomeScreen}
-        options={{ headerTitle: "ホーム" }}
+        options={{ headerTitle: "ヨミトルAI" }}
       />
       <Stack.Screen
         name="History"

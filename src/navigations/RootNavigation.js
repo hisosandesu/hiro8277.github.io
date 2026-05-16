@@ -6,9 +6,9 @@ import { captureError } from "../utils/monitoring";
 
 export default function RootNavigation() {
   React.useEffect(() => {
-    getOrCreateAnonymousUser().catch((e) =>
-      captureError(e, { context: "RootNavigation", action: "anonymousAuth" })
-    );
+    getOrCreateAnonymousUser().catch((e) => {
+      captureError(e, { context: "RootNavigation", action: "anonymousAuth" });
+    });
   }, []);
 
   return (

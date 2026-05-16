@@ -1,5 +1,10 @@
 import { Platform } from "react-native";
 
+/** Firebase Functions のベース URL（Gemini / Vision プロキシ呼び出し先） */
+export const FUNCTIONS_BASE_URL =
+  process.env.EXPO_PUBLIC_FUNCTIONS_BASE_URL ??
+  "https://asia-northeast1-ocr-app-57271.cloudfunctions.net";
+
 /** 履歴の最大保存件数 */
 export const HISTORY_LIMIT = 100;
 

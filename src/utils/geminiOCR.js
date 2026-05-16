@@ -1,120 +1,72 @@
-// expo-file-system v19（SDK 54）では legacy サブパスで旧APIを使用
 import * as FileSystem from "expo-file-system/legacy";
-// @google/genai: Metro bundler は "browser" 条件を解決するため
-// Node.js 固有API（fs, path等）を含まない Web 版バンドルが自動選択される
-import { GoogleGenAI } from "@google/genai";
-
-/** 使用するモデル。URL文字列ではなく定数で管理することでモデル変更が1箇所で完結 */
-const GEMINI_MODEL = "gemini-2.5-flash";
+import { getOrCreateAnonymousUser, getIdToken, forceReAuth } from "./authManager";
+import { OCR_MODE, FUNCTIONS_BASE_URL } from "../constants/app";
 
 /**
- * Gemini API キーが設定されているかを確認する。
- * EXPO_PUBLIC_ プレフィックスによりビルド時に埋め込まれる。
+ * Firebase Functions の geminiProxy が利用可能かを確認する。
+ * サーバー側で API キーを管理するため、クライアント側のキー設定は不要。
  */
 export function isGeminiAvailable() {
-  return !!process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+  return !!FUNCTIONS_BASE_URL;
 }
 
 /**
- * Gemini 2.5 Flash でテキスト認識＋構造化情報抽出を実行する。
- *
- * - @google/genai 新SDK（2025年リリース）を使用
- * - マルチモーダル入力（テキストプロンプト＋base64画像）を1リクエストで送信
- * - config.responseMimeType: "application/json" でJSON純粋出力を強制
- * - レシート以外の文書もそのままOCRテキストとして返す（raw_text）
+ * Firebase Functions 経由で Gemini OCR を実行する。
+ * 画像の base64 変換・送信のみ担当し、プロンプトと API 呼び出しはサーバー側で処理。
  *
  * @param {string} imageUri - 前処理済み画像の file:// URI
- * @returns {Promise<{ raw_text: string, merchant: string|null, date: string|null, total: string|null, tax: string|null, items: Array }>}
- * @throws {Error} API キー未設定 / タイムアウト / API エラー
+ * @param {string} [mode=OCR_MODE.GENERAL] - OCR_MODE 定数
+ * @param {object} [options={}] - 追加オプション（subject など）
+ * @returns {Promise<object>} raw_text を必ず含む構造化結果
  */
-export async function recognizeTextWithGemini(imageUri) {
-  const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("Gemini API key is not configured");
+// AbortSignal.timeout() は Hermes 未対応のため AbortController + setTimeout を使用
+async function fetchGeminiProxy(idToken, imageBase64, mimeType, mode, options) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 35000);
+  try {
+    return await fetch(`${FUNCTIONS_BASE_URL}/geminiProxy`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({ imageBase64, mimeType, mode, options }),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+export async function recognizeTextWithGemini(imageUri, mode = OCR_MODE.GENERAL, options = {}) {
+  await getOrCreateAnonymousUser();
+  let idToken = await getIdToken();
+  if (!idToken) {
+    throw new Error("認証トークンの取得に失敗しました");
   }
 
   const base64Image = await FileSystem.readAsStringAsync(imageUri, {
     encoding: "base64",
   });
 
-  const ai = new GoogleGenAI({ apiKey });
+  let response = await fetchGeminiProxy(idToken, base64Image, "image/jpeg", mode, options);
 
-  const prompt = `画像内のすべてのテキストを正確に読み取り、以下のJSON形式で返してください。
-レシート・領収書の場合は各フィールドを埋めてください。
-それ以外の文書の場合は raw_text のみ埋め、他は null にしてください。
-
-{
-  "raw_text": "画像内の全テキスト（改行を保持）",
-  "merchant": "店名（レシートの場合）",
-  "date": "日付（YYYY-MM-DD形式、レシートの場合）",
-  "total": "合計金額（数字のみ、レシートの場合）",
-  "tax": "消費税額（数字のみ、レシートの場合）",
-  "items": [
-    { "name": "商品名", "price": "金額（数字のみ）", "quantity": "数量" }
-  ]
-}`;
-
-  // SDK は AbortController を直接受け取らないため Promise.race でタイムアウトを実装
-  // （AbortSignal.timeout() は Hermes 未対応のため setTimeout を使う）
-  const timeoutPromise = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error("Gemini API timeout after 30s")), 30000),
-  );
-
-  const generatePromise = ai.models.generateContent({
-    model: GEMINI_MODEL,
-    contents: [
-      {
-        parts: [
-          { text: prompt },
-          {
-            inlineData: {
-              mimeType: "image/jpeg",
-              data: base64Image,
-            },
-          },
-        ],
-      },
-    ],
-    config: {
-      responseMimeType: "application/json",
-    },
-  });
-
-  const response = await Promise.race([generatePromise, timeoutPromise]);
-
-  // 新SDK: response.text は candidates[0].content.parts[0].text のショートカットゲッター
-  const responseText = response.text ?? "";
-
-  if (!responseText) {
-    return {
-      raw_text: "",
-      merchant: null,
-      date: null,
-      total: null,
-      tax: null,
-      items: [],
-    };
+  // 401: stale/wrong-project token → force re-auth and retry once
+  if (response.status === 401) {
+    await forceReAuth();
+    idToken = await getIdToken(true);
+    if (!idToken) throw new Error("再認証に失敗しました");
+    response = await fetchGeminiProxy(idToken, base64Image, "image/jpeg", mode, options);
   }
 
-  try {
-    const parsed = JSON.parse(responseText);
-    return {
-      raw_text: parsed.raw_text ?? "",
-      merchant: parsed.merchant ?? null,
-      date: parsed.date ?? null,
-      total: parsed.total ?? null,
-      tax: parsed.tax ?? null,
-      items: Array.isArray(parsed.items) ? parsed.items : [],
-    };
-  } catch {
-    // JSON パース失敗時は全テキストを raw_text として返す（フォールバック）
-    return {
-      raw_text: responseText,
-      merchant: null,
-      date: null,
-      total: null,
-      tax: null,
-      items: [],
-    };
+  if (!response.ok) {
+    let detail = `${response.status}`;
+    try {
+      const body = await response.json();
+      detail = `${response.status}: ${body.error ?? JSON.stringify(body)}`;
+    } catch { /* response body parse failed */ }
+    throw new Error(`Gemini proxy error: ${detail}`);
   }
+
+  return response.json();
 }

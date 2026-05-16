@@ -80,7 +80,7 @@ import {
   getGeminiTrialUsedThisMonth,
   incrementGeminiTrialUsage,
 } from "../utils/usageTracker";
-import { HISTORY_KEY } from "../constants/storage";
+import { HISTORY_KEY, LAST_SUBJECT_KEY, LAST_MODE_KEY } from "../constants/storage";
 import { COLORS } from "../constants/colors";
 import { MESSAGES } from "../constants/messages";
 import {
@@ -96,6 +96,16 @@ import {
   AD_UNIT_IDS,
 } from "../constants/app";
 
+/** 科目識別子 → 短い表示名（モーダルラベル用）*/
+const SUBJECT_SHORT_LABELS = {
+  [EDUCATION_SUBJECT.GENERAL]:  "汎用",
+  [EDUCATION_SUBJECT.MATH]:     "数学",
+  [EDUCATION_SUBJECT.SCIENCE]:  "理科",
+  [EDUCATION_SUBJECT.JAPANESE]: "国語",
+  [EDUCATION_SUBJECT.ENGLISH]:  "英語",
+  [EDUCATION_SUBJECT.SOCIAL]:   "社会",
+};
+
 export default function HomeScreen({ navigation }) {
   const [image, setImage] = useState("");
   const [text, setText] = useState("");
@@ -110,6 +120,10 @@ export default function HomeScreen({ navigation }) {
   // 汎用オプション選択モーダル。engine/mode 両方で使い回す
   // null = 非表示, { title: string, items: [{label, onPress}] } = 表示中
   const [optionsModal, setOptionsModal] = useState(null);
+  // 前回選択した科目（UI 表示用 state + OCR 用 ref の二刀流）
+  const [savedSubject, setSavedSubject] = useState(null);
+  // 前回使用した Gemini モード（汎用/レシート/教育）
+  const [savedMode, setSavedMode] = useState(null);
   // エンジン・モード・科目選択ダイアログで設定される。refのためレンダリングをトリガーしない
   const engineForNextOCR  = useRef(OCR_ENGINE.ML_KIT);
   const modeForNextOCR    = useRef(OCR_MODE.GENERAL);
@@ -123,58 +137,86 @@ export default function HomeScreen({ navigation }) {
 
   /** EDUCATIONモード選択後に科目を選ばせるサブモーダル */
   const showSubjectSelector = useCallback((onSelected) => {
+    const selectAndSave = (subject) => {
+      AppStorage.setItem(LAST_SUBJECT_KEY, subject).catch(() => {});
+      setSavedSubject(subject); // モーダルラベルを次回から更新
+      onSelected(subject);
+    };
     setOptionsModal({
       title: MESSAGES.INFO.SUBJECT_SELECT_TITLE,
       items: [
-        { icon: Library,       label: MESSAGES.INFO.SUBJECT_GENERAL,  onPress: () => onSelected(EDUCATION_SUBJECT.GENERAL) },
-        { icon: Calculator,    label: MESSAGES.INFO.SUBJECT_MATH,     onPress: () => onSelected(EDUCATION_SUBJECT.MATH) },
-        { icon: FlaskConical,  label: MESSAGES.INFO.SUBJECT_SCIENCE,  onPress: () => onSelected(EDUCATION_SUBJECT.SCIENCE) },
-        { icon: BookText,      label: MESSAGES.INFO.SUBJECT_JAPANESE, onPress: () => onSelected(EDUCATION_SUBJECT.JAPANESE) },
-        { icon: Languages,     label: MESSAGES.INFO.SUBJECT_ENGLISH,  onPress: () => onSelected(EDUCATION_SUBJECT.ENGLISH) },
-        { icon: Globe,         label: MESSAGES.INFO.SUBJECT_SOCIAL,   onPress: () => onSelected(EDUCATION_SUBJECT.SOCIAL) },
+        { icon: Library,      label: MESSAGES.INFO.SUBJECT_GENERAL,  subtitle: MESSAGES.INFO.SUBJECT_GENERAL_SUB,  onPress: () => selectAndSave(EDUCATION_SUBJECT.GENERAL) },
+        { icon: Calculator,   label: MESSAGES.INFO.SUBJECT_MATH,     subtitle: MESSAGES.INFO.SUBJECT_MATH_SUB,     onPress: () => selectAndSave(EDUCATION_SUBJECT.MATH) },
+        { icon: FlaskConical, label: MESSAGES.INFO.SUBJECT_SCIENCE,  subtitle: MESSAGES.INFO.SUBJECT_SCIENCE_SUB,  onPress: () => selectAndSave(EDUCATION_SUBJECT.SCIENCE) },
+        { icon: BookText,     label: MESSAGES.INFO.SUBJECT_JAPANESE, subtitle: MESSAGES.INFO.SUBJECT_JAPANESE_SUB, onPress: () => selectAndSave(EDUCATION_SUBJECT.JAPANESE) },
+        { icon: Languages,    label: MESSAGES.INFO.SUBJECT_ENGLISH,  subtitle: MESSAGES.INFO.SUBJECT_ENGLISH_SUB,  onPress: () => selectAndSave(EDUCATION_SUBJECT.ENGLISH) },
+        { icon: Globe,        label: MESSAGES.INFO.SUBJECT_SOCIAL,   subtitle: MESSAGES.INFO.SUBJECT_SOCIAL_SUB,   onPress: () => selectAndSave(EDUCATION_SUBJECT.SOCIAL) },
       ],
     });
   }, []);
 
   /**
    * Gemini 選択後にスキャンモードを選ばせる。
-   * EDUCATIONモードを選択した場合はさらに科目選択へ進む。
-   * Alert.alert は Android で最大3ボタンまでしか表示できないため
-   * 汎用 optionsModal を使用する（5モード + キャンセルの計6項目が必要）。
+   * モード確定時に LAST_MODE_KEY を保存してエンジン選択クイックピックに反映する。
    */
   const showModeSelector = useCallback((onSelected) => {
+    const confirmMode = (mode) => {
+      AppStorage.setItem(LAST_MODE_KEY, mode).catch(() => {});
+      setSavedMode(mode);
+      onSelected(mode);
+    };
+
     setOptionsModal({
       title: MESSAGES.INFO.MODE_SELECT_TITLE,
       items: [
-        { icon: FileText,      label: MESSAGES.INFO.MODE_GENERAL,   subtitle: MESSAGES.INFO.MODE_GENERAL_SUB,   onPress: () => onSelected(OCR_MODE.GENERAL) },
-        { icon: Receipt,       label: MESSAGES.INFO.MODE_RECEIPT,   subtitle: MESSAGES.INFO.MODE_RECEIPT_SUB,   onPress: () => onSelected(OCR_MODE.RECEIPT) },
-        {
-          icon: GraduationCap,
-          label: MESSAGES.INFO.MODE_EDUCATION,
-          subtitle: MESSAGES.INFO.MODE_EDUCATION_SUB,
-          onPress: () => showSubjectSelector((subject) => {
-            subjectForNextOCR.current = subject;
-            onSelected(OCR_MODE.EDUCATION);
-          }),
-        },
+        { icon: FileText,    label: MESSAGES.INFO.MODE_GENERAL,   subtitle: MESSAGES.INFO.MODE_GENERAL_SUB,   onPress: () => confirmMode(OCR_MODE.GENERAL) },
+        { icon: Receipt,     label: MESSAGES.INFO.MODE_RECEIPT,   subtitle: MESSAGES.INFO.MODE_RECEIPT_SUB,   onPress: () => confirmMode(OCR_MODE.RECEIPT) },
+        { icon: GraduationCap, label: MESSAGES.INFO.MODE_EDUCATION, subtitle: MESSAGES.INFO.MODE_EDUCATION_SUB, onPress: () => showSubjectSelector((subject) => {
+          subjectForNextOCR.current = subject;
+          confirmMode(OCR_MODE.EDUCATION);
+        }) },
       ],
     });
   }, [showSubjectSelector]);
 
   /**
    * エンジン選択 → Gemini の場合はさらにモード選択へ進む。
-   * Alert.alert は Android で最大3ボタンまでしか表示できないため
-   * 汎用 optionsModal を使用する（最大4項目 + キャンセルが必要）。
+   * 前回使用した Gemini モードがある場合は先頭にクイックピックを表示し、
+   * モード選択（+ 教育の場合は科目選択も）をスキップして1タップでカメラ起動できる。
    */
   const showEngineSelector = useCallback((onSelected) => {
-    const items = [
-      {
-        icon: FileText,
-        label:    MESSAGES.INFO.ENGINE_ML_KIT,
-        subtitle: MESSAGES.INFO.ENGINE_ML_KIT_SUB,
-        onPress: () => onSelected(OCR_ENGINE.ML_KIT, null),
-      },
-    ];
+    const items = [];
+    if (savedMode && isGeminiAvailable()) {
+      const quickIcon =
+        savedMode === OCR_MODE.EDUCATION ? GraduationCap :
+        savedMode === OCR_MODE.RECEIPT   ? Receipt :
+        Sparkles;
+      const quickSubtitle =
+        savedMode === OCR_MODE.EDUCATION
+          ? (savedSubject
+              ? `Gemini · 教育（${SUBJECT_SHORT_LABELS[savedSubject]}）`
+              : "Gemini · 教育")
+          : savedMode === OCR_MODE.RECEIPT
+          ? "Gemini · レシート"
+          : "Gemini · 汎用";
+      items.push({
+        icon: quickIcon,
+        label: "前回の設定で認識",
+        subtitle: quickSubtitle,
+        onPress: () => {
+          if (savedMode === OCR_MODE.EDUCATION && savedSubject) {
+            subjectForNextOCR.current = savedSubject;
+          }
+          onSelected(OCR_ENGINE.GEMINI_FLASH, savedMode);
+        },
+      });
+    }
+    items.push({
+      icon: FileText,
+      label:    MESSAGES.INFO.ENGINE_ML_KIT,
+      subtitle: MESSAGES.INFO.ENGINE_ML_KIT_SUB,
+      onPress: () => onSelected(OCR_ENGINE.ML_KIT, null),
+    });
     if (isCloudVisionAvailable()) {
       items.push({
         icon: RefreshCw,
@@ -192,7 +234,7 @@ export default function HomeScreen({ navigation }) {
       });
     }
     setOptionsModal({ title: MESSAGES.INFO.ENGINE_SELECT_TITLE, items });
-  }, [showModeSelector]);
+  }, [showModeSelector, savedSubject, savedMode]);
 
   const pickImage = useCallback(() => {
     showEngineSelector(async (engine, mode) => {
@@ -623,6 +665,21 @@ export default function HomeScreen({ navigation }) {
     return () => cleanupInterstitial();
   }, []);
 
+  // 前回選択した科目・モードを復元してデフォルト化する
+  useEffect(() => {
+    AppStorage.getItem(LAST_SUBJECT_KEY).then((saved) => {
+      if (saved && Object.values(EDUCATION_SUBJECT).includes(saved)) {
+        subjectForNextOCR.current = saved;
+        setSavedSubject(saved);
+      }
+    }).catch(() => {});
+    AppStorage.getItem(LAST_MODE_KEY).then((saved) => {
+      if (saved && Object.values(OCR_MODE).includes(saved)) {
+        setSavedMode(saved);
+      }
+    }).catch(() => {});
+  }, []);
+
   useEffect(() => {
     if (image) {
       recognizeText();
@@ -679,6 +736,7 @@ export default function HomeScreen({ navigation }) {
                       updateHistoryQuizScore(lastSavedItemIdRef.current, quizData);
                     }
                   }}
+                  onSaveQuiz={saveToHistory}
                 />
               )}
             </>
