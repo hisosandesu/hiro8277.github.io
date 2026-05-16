@@ -510,7 +510,7 @@ eas secret:create --name EXPO_PUBLIC_ADMOB_NATIVE_ID --value ca-app-pub-40834226
 | 24 | EAS Dev Build 更新（Proxy 移行・科目デフォルト化の実機確認） | ✅ 実機確認不要（実機で直接確認済み 2026-05-16） |
 | 25 | デバッグ Alert 全削除 + モードセレクター簡略化 | ✅ 完了 2026-05-16 |
 | 26 | feat/gemini-25-flash-new-sdk → master マージ（57ファイル） | ✅ 完了 2026-05-16（Fast-forward・アイコン WebP 含む） |
-| 27 | Google Play クローズドテスト（Alpha）提出 | ✅ 審査提出済み 2026-05-16（審査中・1〜3日） |
+| 27 | Google Play クローズドテスト（Alpha）提出 | ✅ 審査提出済み 2026-05-16（AAB 最新版反映確認済み・審査中 1〜3日） |
 | 28 | premium_monthly 定期購入商品作成（Play Console） | ⏳ クローズドテスト審査通過後 |
 | 29 | Gemini API クォータ設定（Cloud Console・推奨200 req/day） | ⏳ 独立タスク・いつでも実施可 |
 
