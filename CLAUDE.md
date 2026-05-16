@@ -489,7 +489,7 @@ eas secret:create --name EXPO_PUBLIC_ADMOB_NATIVE_ID --value ca-app-pub-40834226
 | 3 | ストア掲載情報入力（説明文・スクリーンショット等） | ✅ 完了 2026-05-08 |
 | 4 | EAS Build production → Google Play 内部テスト提出 | ✅ 提出済み（審査待ち 2026-05-08） |
 | 5 | Google Play Console 広告 ID 宣言（AD_ID）| ✅ 完了 2026-05-08（広告・マーケティング選択） |
-| 6 | premium_monthly 定期購入商品作成 | ⏳ 内部テスト審査完了後に実施 |
+| 6 | premium_monthly 定期購入商品作成 | ⏳ クローズドテスト審査完了後に実施 |
 | 7 | RevenueCat コンソール設定（API Key 取得・商品登録） | ⏳ premium_monthly 作成後に実施 |
 | 8 | フェーズ 3: RevenueCat サブスクリプション（Step 3〜4） | ⏳ RevenueCat 設定完了後にコード実装 |
 | 9 | フェーズ 4: Firebase Functions Proxy デプロイ | ✅ デプロイ完了 2026-05-10（geminiProxy / visionProxy / revenueCatWebhook） |
@@ -497,7 +497,7 @@ eas secret:create --name EXPO_PUBLIC_ADMOB_NATIVE_ID --value ca-app-pub-40834226
 | 11 | EAS Dev Build 再ビルド（Firebase 追加のため） | ✅ 完了 2026-05-07（build 4932d71f） |
 | 12 | Gemini API クォータを Cloud Console で設定（推奨200 req/day） | 未実施 |
 | 13 | Cloud Vision iOS 対応（X-Ios-Bundle-Identifier ヘッダー追加） | ✅ 不要（サーバーサイド ADC に移行済み・2026-05-10） |
-| 14 | iOS Production Build → App Store 提出 | ⏳ iOS Dev テスト完了後 |
+| 14 | iOS Production Build → App Store 提出 | ⏳ クローズドテスト審査完了後 |
 | 15 | Android Dev Build で Gemini / Cloud Vision プロキシ動作確認 | ✅ 完了 2026-05-11（Gemini EDUCATION/RECEIPT・Cloud Vision 手書き認識 全て動作確認） |
 | 16 | functions/src/middleware/auth.ts 再デプロイ（エラーコード付き 401）| ✅ 完了 2026-05-11（invoker:public + thinkingConfig 削除 + fallback:true で再デプロイ） |
 | 17 | Firebase Functions Node.js 20 → 22 アップグレード | ✅ 完了 2026-05-11（functions/package.json engines.node: "22"・tsconfig target: es2022） |
@@ -507,7 +507,12 @@ eas secret:create --name EXPO_PUBLIC_ADMOB_NATIVE_ID --value ca-app-pub-40834226
 | 21 | 社会・英語の教育プロンプトをさらに深化 | ✅ 完了 2026-05-15（geminiProxy 再デプロイ済み・既存フィールド活用方式） |
 | 22 | quizGenerator.js の Firebase Functions Proxy 移行 | ✅ 完了 2026-05-16（geminiProxy 再デプロイ済み） |
 | 23 | 最後に選んだ科目を AsyncStorage に保存してデフォルト化 | ✅ 完了 2026-05-16 |
-| 24 | EAS Dev Build 更新（Proxy 移行・科目デフォルト化の実機確認） | ⏳ 次回実施 |
+| 24 | EAS Dev Build 更新（Proxy 移行・科目デフォルト化の実機確認） | ✅ 実機確認不要（実機で直接確認済み 2026-05-16） |
+| 25 | デバッグ Alert 全削除 + モードセレクター簡略化 | ✅ 完了 2026-05-16 |
+| 26 | feat/gemini-25-flash-new-sdk → master マージ（57ファイル） | ✅ 完了 2026-05-16（Fast-forward・アイコン WebP 含む） |
+| 27 | Google Play クローズドテスト（Alpha）提出 | ✅ 審査提出済み 2026-05-16（審査中・1〜3日） |
+| 28 | premium_monthly 定期購入商品作成（Play Console） | ⏳ クローズドテスト審査通過後 |
+| 29 | Gemini API クォータ設定（Cloud Console・推奨200 req/day） | ⏳ 独立タスク・いつでも実施可 |
 
 ---
 

@@ -96,9 +96,75 @@
 
 ---
 
+### 4. デバッグ用 Alert.alert 全削除 + モードセレクター簡略化
+
+**背景**: Firebase Proxy の本番動作が 2026-05-11 に確認済みのため、デバッグ用アラートは役割終了。
+モードセレクターの「前回の科目でそのまま認識」2分岐はエンジンのクイックピックでカバー済みで冗長と判断。
+
+**削除した Alert（4箇所）**:
+
+| ファイル | 削除内容 |
+|---------|---------|
+| `src/navigations/RootNavigation.js` | `if (__DEV__) Alert.alert("Debug: Auth Error", ...)` + `Alert` インポート削除 |
+| `src/screens/HomeScreen.js` | `if (__DEV__) Alert.alert("Debug: Gemini Error", ...)` in `recognizeText` |
+| `src/screens/HomeScreen.js` | `if (__DEV__) Alert.alert("Debug: Vision Error", ...)` in `recognizeTextHighPrecision` |
+| `src/screens/HomeScreen.js` | `if (__DEV__) Alert.alert("Debug: Gemini Error", ...)` in `reRecognizeWithGemini` |
+
+**注意**: `__DEV__ ? 0 : await getGeminiTrialUsedThisMonth()` は意図的な Dev 挙動（月次制限スキップ）のため維持。
+
+**モードセレクター変更**:
+- 以前: `savedSubject` があると4項目（教育2分岐）/ なければ3項目（動的）
+- 以後: 常に固定3項目（汎用・レシート・教育）。`useCallback` deps から `savedSubject` を削除
+- エンジンセレクターのクイックピック（`savedMode` + `savedSubject`）で同等の利便性を実現済み
+
+---
+
+### 5. フィーチャーブランチの master マージ + 全ファイルコミット
+
+**原因判明**: 内部テスト AAB は `master` ブランチからビルド（古い PNG アイコン）。
+Dev Build は `feat/gemini-25-flash-new-sdk`（WebP アイコン修正済み）からビルド。
+ブランチ差異（23コミット先行）がアイコン相違の原因。
+
+**実施内容**:
+1. 未コミットの全ファイル（57ファイル）を `feat/gemini-25-flash-new-sdk` にコミット
+   - 新規コンポーネント: EducationView / QuizView / ReceiptView / NativeAdCard / PrivacyBadge
+   - 新規ユーティリティ: mlKitTextReconstructor / receiptParser / quizGenerator / adManager / ankiExporter / excelExporter / usageTracker
+   - Firebase Functions: geminiProxy / visionProxy / webhooks / middleware/auth
+2. `feat/gemini-25-flash-new-sdk` → `master` へ Fast-forward マージ
+
+**マージ後の master 状態**:
+- アイコン: 全解像度 WebP 形式（古い PNG 削除済み）✅
+- Firebase Proxy: 全プロキシコミット済み ✅
+- uses-feature camera required=false ✅
+- `versionCode` は `eas.json` の `autoIncrement: true` で自動管理（前回12 → 次回13）
+
+---
+
+### 6. Google Play Console クローズドテスト（Alpha）提出
+
+**背景**: 内部テストは「有効・未審査」状態 = Google のポリシー審査なし。
+定期購入商品の作成には Google の審査通過が必須 → クローズドテストへ昇格が必要と判明。
+
+**実施内容**:
+1. Play Console → クローズドテスト → 新しいリリースを作成
+2. 内部テストと同じ AAB をアップロード（再ビルド不要）
+3. フィードバック連絡先: `nakaima8277@gmail.com` 設定
+4. リリースノート（ja-JP / en-US）記入
+5. `READ_MEDIA_IMAGES` 権限の説明を Play Console に記入・送信
+   - 理由: expo-image-picker が自動追加 / OCR のためユーザーが選択した画像にアクセスするため
+6. 「リリースを確認して公開」→ 審査提出 ✅
+
+**現在の状態**: Google 審査中（1〜3日）
+**審査通過後**: `premium_monthly` 定期購入商品の作成が解放される
+
+---
+
 ### 次回作業
 
-- EAS Dev Build 更新（クイックピック・Proxy 移行・科目デフォルト化の実機確認）
+- Google Play クローズドテスト審査結果を確認（1〜3日後）
+- 審査通過後 → `premium_monthly` 定期購入商品作成（Play Console）
+- RevenueCat コンソール設定（API Key 取得・商品登録・Webhook URL）
+- コード実装: purchaseManager.js / PaywallModal.js / HomeScreen 権限ゲート
 - iOS Production Build → App Store 提出
 
 ---
